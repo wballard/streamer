@@ -1,0 +1,51 @@
+{
+  "name": "streamer",
+  "version": "0.0.1",
+  "description": "Stream your script and template changes as events.",
+  "homepage": "https://github.com/wballard/streamer",
+  "keywords": [
+    "connect",
+    "middleware",
+    "compiler",
+    "development",
+    "coffee-script",
+    "coco",
+    "jade",
+    "stylus",
+    "less",
+    "css",
+    "minify"
+  ],
+  "author": "Will Ballard",
+  "main": "./compiler",
+  "dependencies": {
+    "walk": "",
+    "q": "",
+    "underscore": "",
+    "coffee-script": ">= 1.2.0",
+    "handlebars": ">= 1.0.0",
+    "less": ">= 1.2.2",
+    "js-yaml": ">= 0.2.3",
+    "uglify-js": ">= 1.3.3"
+  },
+  "devDependencies": {
+    "touch": "",
+    "mocha": "",
+    "should": ""
+  },
+  "scripts": {
+    "test": "make test",
+    "install": "make all"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/wballard/streamer"
+  },
+  "bugs": {
+    "url": "https://github.com/wballard/streamer/issues"
+  },
+  "engine": {
+    "node": ">=0.8.0"
+  },
+  "license": "MIT"
+}
