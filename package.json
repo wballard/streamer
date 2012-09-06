@@ -17,7 +17,7 @@
     "minify"
   ],
   "author": "Will Ballard",
-  "main": "./compiler",
+  "main": "./streamer",
   "dependencies": {
     "walk": "",
     "q": "",
@@ -32,7 +32,9 @@
   "devDependencies": {
     "touch": "",
     "mocha": "",
-    "should": ""
+    "should": "",
+    "supertest": "",
+    "connect": ""
   },
   "scripts": {
     "test": "make test",

@@ -7,6 +7,7 @@ fs = require 'fs'
 path = require 'path'
 Q = require 'q'
 chokidar = require 'chokidar'
+url = require 'url'
 compilers =
     coffeescript: require 'coffee-script'
     uglify: require 'uglify-js'
@@ -78,26 +79,61 @@ compile = (file_name, options, callback) ->
     result
         .then (options) ->
             Q.fcall () ->
-                console.log
-                callback options.file_name, options.source, options
+                callback options.file_name, options.source
         .fail (error) ->
-            console.log error
+            callback null, null, options, error
         .end()
 
 #our exported bits
-
 ###
 Default options for watch.
 @param
 ###
 exports.DEFAULTS = DEFAULTS =
     directory: process.cwd()
+    mount: '/'
     followLinks: true
     walk: true
     log: false
     pipelines:
         '.coffee': [read, coffeescript, uglify]
         '.handlebars': [read, handlebars]
+    makes:
+        '.coffee.js': '.coffee'
+
+
+###
+Connect middleware, this will stream compiled content on demand.
+###
+exports.deliver = (options) ->
+    options = merge DEFAULTS, options
+    match_mount = new RegExp "^#{options.mount}"
+    (request, response, next) ->
+        #should we try at all?
+        if request.method isnt 'GET'
+            console.log 'a'
+            return next()
+        pathname = url.parse(request.url).pathname
+        if not match_mount.exec pathname
+            return next()
+        pathname = pathname.replace match_mount, ''
+        pathname = path.join options.directory, pathname
+        #now let's figure all the actual file names possible
+        possible = null
+        for to, from of options.makes
+            match_to = new RegExp("#{to}$")
+            if match_to.exec pathname
+                possible = pathname.replace match_to, from
+                break
+        if possible
+            compile possible, options, (source_file_name, compiled_source, error) ->
+                if error
+                    next()
+                else
+                    response.setHeader 'Location', source_file_name
+                    response.end compiled_source
+        else
+            next()
 
 ###
 Watch a directory for source file changes, firing the callback with compiled

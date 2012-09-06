@@ -5,10 +5,26 @@ Basic works-at-all tests.
 should = require 'should'
 fs = require 'fs'
 streamer = require '../streamer.coffee'
+request = require 'supertest'
+connect = require 'connect'
+
+
+describe 'can deliver code via GET', ->
+    app = connect()
+    app.use(streamer.deliver(
+        directory: __dirname + '/src'
+        mount: '/at'
+        log: false
+    ))
+    it 'should be able to stream coffescript', (done) ->
+        request(app)
+            .get('/at/scratch.coffee.js')
+            .expect(200, done)
+
 
 watcher = null
 
-describe 'compilation', ->
+describe 'callbacks from code changes', ->
 
     afterEach (done) ->
         watcher.close()
@@ -17,17 +33,17 @@ describe 'compilation', ->
     it 'should fire events on start', (done) ->
         watcher = streamer.watch
             directory: __dirname + '/src/scratch.coffee'
-            log: true
-            , (source_file_name, compiled, options) ->
+            log: false
+            , (source_file_name, compiled, error) ->
                 eval(compiled)
                 done()
 
     it 'should fire events on change', (done) ->
         watcher = streamer.watch
             directory: '/tmp/generated.coffee'
-            log: true
             walk: false
-            , (source_file_name, compiled, options) ->
+            log: false
+            , (source_file_name, compiled, error) ->
                 eval(compiled)
                 done()
         source = '/tmp/generated.coffee'
@@ -39,8 +55,7 @@ describe 'compilation', ->
     it 'knows about handlebars', (done) ->
         watcher = streamer.watch
             directory: __dirname + '/src/scratch.handlebars'
-            log: true
-            , (source_file_name, compiled, options) ->
-                console.log compiled
+            log: false
+            , (source_file_name, compiled, error) ->
                 eval(compiled)
                 done()
