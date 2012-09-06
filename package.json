@@ -21,6 +21,7 @@
   "dependencies": {
     "walk": "",
     "q": "",
+    "chokidar": "",
     "underscore": "",
     "coffee-script": ">= 1.2.0",
     "handlebars": ">= 1.0.0",

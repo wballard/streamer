@@ -8,6 +8,7 @@ path = require 'path'
 Q = require 'q'
 coffeescript = require 'coffee-script'
 uglifyjs = require 'uglify-js'
+chokidar = require 'chokidar'
 
 
 #Just plain functions here
@@ -50,6 +51,12 @@ uglify = (options) ->
 compile = (file_name, options, callback) ->
     #pick the right pipeline, then create a Q chain from it
     pipeline = options.pipelines[path.extname(file_name)]
+    if not pipeline
+        if options.log
+            console.log "no pipeline for #{file_name}"
+        return
+    if options.log
+        console.log "compiling #{file_name}"
     options = merge {file_name: file_name}, options
 
     #and a promise chain, adding in the compiler sequences as a pipeline
@@ -73,6 +80,7 @@ exports.DEFAULTS = DEFAULTS =
     directory: process.cwd()
     followLinks: true
     walk: true
+    log: false
     pipelines:
         '.coffee': [read, coffee, uglify]
 
@@ -80,9 +88,15 @@ exports.watch = (options, callback) ->
     options = merge DEFAULTS, options
 
     #changes for sure
-    watcher = fs.watch options.directory, (event, filename) ->
-        console.log event, filename
+    watcher = chokidar.watch options.directory
 
+    watcher.on 'error', (error) ->
+        if options.log
+            console.log error
+    watcher.on 'add', (path) ->
+        compile path, options, callback
+    watcher.on 'change', (path) ->
+        compile path, options, callback
     #and initially all files
     if options.walk
         walker = walk.walk options.directory, options
@@ -93,3 +107,4 @@ exports.watch = (options, callback) ->
                 console.log err
             finally
                 next()
+    watcher
