@@ -8,27 +8,27 @@ streamer = require '../streamer.coffee'
 
 watcher = null
 
-describe 'basic compilation', ->
+describe 'compilation', ->
 
     afterEach (done) ->
         watcher.close()
         done()
 
     it 'should fire events on start', (done) ->
-        hits = 0
         watcher = streamer.watch
-            directory: __dirname + '/src'
+            directory: __dirname + '/src/scratch.coffee'
             log: true
             , (source_file_name, compiled, options) ->
-                hits += 1
-                done() if hits == 1
+                eval(compiled)
+                done()
 
     it 'should fire events on change', (done) ->
         watcher = streamer.watch
-            directory: '/tmp'
+            directory: '/tmp/generated.coffee'
             log: true
             walk: false
             , (source_file_name, compiled, options) ->
+                eval(compiled)
                 done()
         source = '/tmp/generated.coffee'
         if fs.existsSync source
@@ -36,3 +36,11 @@ describe 'basic compilation', ->
         fs.writeFileSync source, '#A comment'
 
 
+    it 'knows about handlebars', (done) ->
+        watcher = streamer.watch
+            directory: __dirname + '/src/scratch.handlebars'
+            log: true
+            , (source_file_name, compiled, options) ->
+                console.log compiled
+                eval(compiled)
+                done()

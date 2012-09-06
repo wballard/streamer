@@ -6,9 +6,11 @@ walk = require 'walk'
 fs = require 'fs'
 path = require 'path'
 Q = require 'q'
-coffeescript = require 'coffee-script'
-uglifyjs = require 'uglify-js'
 chokidar = require 'chokidar'
+compilers =
+    coffeescript: require 'coffee-script'
+    uglify: require 'uglify-js'
+    handlebars: require 'handlebars'
 
 
 #Just plain functions here
@@ -35,17 +37,24 @@ read = (options) ->
             defer.resolve options
     defer.promise
 
-coffee = (options) ->
+coffeescript = (options) ->
     Q.fcall ->
-        options.source = coffeescript.compile options.source, options
+        options.source = compilers.coffeescript.compile options.source, options
         options
 
 uglify = (options) ->
     Q.fcall ->
-        ast = uglifyjs.parser.parse options.source
-        ast = uglifyjs.uglify.ast_mangle ast
-        ast = uglifyjs.uglify.ast_squeeze ast
-        options.source =  uglifyjs.uglify.gen_code ast
+        ast = compilers.uglify.parser.parse options.source
+        ast = compilers.uglify.uglify.ast_mangle ast
+        ast = compilers.uglify.uglify.ast_squeeze ast
+        options.source =  compilers.uglify.uglify.gen_code ast
+        options
+
+handlebars = (options) ->
+    Q.fcall ->
+        template_function = compilers.handlebars.precompile options.source, options
+        options.source = String template_function
+        options.source = "var template = #{options.source}"
         options
 
 compile = (file_name, options, callback) ->
@@ -76,14 +85,26 @@ compile = (file_name, options, callback) ->
         .end()
 
 #our exported bits
+
+###
+Default options for watch.
+@param
+###
 exports.DEFAULTS = DEFAULTS =
     directory: process.cwd()
     followLinks: true
     walk: true
     log: false
     pipelines:
-        '.coffee': [read, coffee, uglify]
+        '.coffee': [read, coffeescript, uglify]
+        '.handlebars': [read, handlebars]
 
+###
+Watch a directory for source file changes, firing the callback with compiled
+source.
+@param {} options Take a look at DEFAULTS
+@param {Function) callback (source_file_name, compiled_source, options)
+###
 exports.watch = (options, callback) ->
     options = merge DEFAULTS, options
 
