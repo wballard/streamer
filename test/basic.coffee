@@ -7,6 +7,7 @@ fs = require 'fs'
 streamer = require '../streamer.coffee'
 request = require 'supertest'
 connect = require 'connect'
+Handlebars = require 'handlebars'
 
 
 describe 'can deliver code via GET', ->
@@ -55,7 +56,7 @@ describe 'callbacks from code changes', ->
     it 'knows about handlebars', (done) ->
         watcher = streamer.watch
             directory: __dirname + '/src/scratch.handlebars'
-            log: false
+            log: true
             , (data, error) ->
                 eval(data.source)
                 done()

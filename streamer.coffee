@@ -56,8 +56,17 @@ uglify = (options) ->
 handlebars = (options) ->
     Q.fcall ->
         template_function = compilers.handlebars.precompile options.source, options
+        template_name = options.file_name.replace options.directory, ''
+        options.template_name = template_name.replace path.extname(template_name), ''
         options.source = String template_function
-        options.source = "var template = #{options.source}"
+        options.source =
+            """
+            (function() {
+                var template = Handlebars.template, templates = Handlebars.templates = Handlebars.templates || {};
+                templates['#{options.template_name}'] = template(#{options.source});
+                })();
+            """
+        options.name = options.template_name
         options
 
 compile = (file_name, options, callback) ->
