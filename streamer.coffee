@@ -8,6 +8,8 @@ path = require 'path'
 Q = require 'q'
 chokidar = require 'chokidar'
 url = require 'url'
+
+#namespace out the compilers, so I can call these by name at the top level
 compilers =
     coffeescript: require 'coffee-script'
     uglify: require 'uglify-js'
@@ -16,7 +18,7 @@ compilers =
 
 #Just plain functions here
 merge = (object, rest...) ->
-    _.extend object, rest...
+    _.extend _.clone(object), rest...
 
 realpath = (options) ->
     defer = Q.defer()
@@ -66,7 +68,7 @@ compile = (file_name, options, callback) ->
             console.log "no pipeline for #{file_name}"
         return
     if options.log
-        console.log "compiling #{file_name}"
+        console.log "compiling #{file_name} #{options.directory}"
     options = merge {file_name: file_name}, options
 
     #and a promise chain, adding in the compiler sequences as a pipeline
@@ -79,9 +81,9 @@ compile = (file_name, options, callback) ->
     result
         .then (options) ->
             Q.fcall () ->
-                callback options.file_name, options.source
+                callback options, null
         .fail (error) ->
-            callback null, null, options, error
+            callback options, error
         .end()
 
 #our exported bits
@@ -96,7 +98,7 @@ exports.DEFAULTS = DEFAULTS =
     walk: true
     log: false
     pipelines:
-        '.coffee': [read, coffeescript, uglify]
+        '.coffee': [read, coffeescript]
         '.handlebars': [read, handlebars]
     makes:
         '.coffee.js': '.coffee'
@@ -111,7 +113,6 @@ exports.deliver = (options) ->
     (request, response, next) ->
         #should we try at all?
         if request.method isnt 'GET'
-            console.log 'a'
             return next()
         pathname = url.parse(request.url).pathname
         if not match_mount.exec pathname
@@ -126,12 +127,16 @@ exports.deliver = (options) ->
                 possible = pathname.replace match_to, from
                 break
         if possible
-            compile possible, options, (source_file_name, compiled_source, error) ->
+            if options.log
+                console.log "possibly streaming #{possible}"
+            compile possible, options, (data, error) ->
                 if error
+                    if options.log
+                        console.log error
                     next()
                 else
-                    response.setHeader 'Location', source_file_name
-                    response.end compiled_source
+                    response.setHeader 'Location', data.file_name
+                    response.end data.source
         else
             next()
 
@@ -139,29 +144,20 @@ exports.deliver = (options) ->
 Watch a directory for source file changes, firing the callback with compiled
 source.
 @param {} options Take a look at DEFAULTS
-@param {Function) callback (source_file_name, compiled_source, options)
+@param {Function) callback (data, error)
 ###
 exports.watch = (options, callback) ->
     options = merge DEFAULTS, options
-
     #changes for sure
     watcher = chokidar.watch options.directory
-
     watcher.on 'error', (error) ->
         if options.log
             console.log error
     watcher.on 'add', (path) ->
+        #this gets called on an add -- and as an initial walk when we turn on
+        options.why = 'fileadd'
         compile path, options, callback
     watcher.on 'change', (path) ->
+        options.why = 'filechange'
         compile path, options, callback
-    #and initially all files
-    if options.walk
-        walker = walk.walk options.directory, options
-        walker.on 'file', (root, fileStats, next) ->
-            try
-                compile path.join(root, fileStats.name), options, callback
-            catch err
-                console.log err
-            finally
-                next()
     watcher

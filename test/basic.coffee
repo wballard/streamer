@@ -34,8 +34,8 @@ describe 'callbacks from code changes', ->
         watcher = streamer.watch
             directory: __dirname + '/src/scratch.coffee'
             log: false
-            , (source_file_name, compiled, error) ->
-                eval(compiled)
+            , (data, error) ->
+                eval(data.source)
                 done()
 
     it 'should fire events on change', (done) ->
@@ -43,8 +43,8 @@ describe 'callbacks from code changes', ->
             directory: '/tmp/generated.coffee'
             walk: false
             log: false
-            , (source_file_name, compiled, error) ->
-                eval(compiled)
+            , (data, error) ->
+                eval(data.source)
                 done()
         source = '/tmp/generated.coffee'
         if fs.existsSync source
@@ -56,6 +56,6 @@ describe 'callbacks from code changes', ->
         watcher = streamer.watch
             directory: __dirname + '/src/scratch.handlebars'
             log: false
-            , (source_file_name, compiled, error) ->
-                eval(compiled)
+            , (data, error) ->
+                eval(data.source)
                 done()

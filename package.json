@@ -19,7 +19,6 @@
   "author": "Will Ballard",
   "main": "./streamer",
   "dependencies": {
-    "walk": "",
     "q": "",
     "chokidar": "",
     "underscore": "",
