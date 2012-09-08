@@ -20,7 +20,11 @@ describe 'can deliver code via GET', ->
     it 'should be able to stream coffescript', (done) ->
         request(app)
             .get('/at/scratch.coffee.js')
-            .expect(200, done)
+            .expect(200)
+            .expect('Content-Type', /javascript/)
+            .end (req, res) ->
+                eval(res.body)
+                done()
 
 
 watcher = null
@@ -35,7 +39,8 @@ describe 'callbacks from code changes', ->
         watcher = streamer.watch
             directory: __dirname + '/src/scratch.coffee'
             log: false
-            , (data, error) ->
+            , (error, data) ->
+                data.should.have.property('source')
                 eval(data.source)
                 done()
 
@@ -44,7 +49,8 @@ describe 'callbacks from code changes', ->
             directory: '/tmp/generated.coffee'
             walk: false
             log: false
-            , (data, error) ->
+            , (error, data) ->
+                data.should.have.property('source')
                 eval(data.source)
                 done()
         source = '/tmp/generated.coffee'
@@ -56,7 +62,7 @@ describe 'callbacks from code changes', ->
     it 'knows about handlebars', (done) ->
         watcher = streamer.watch
             directory: __dirname + '/src/scratch.handlebars'
-            log: true
-            , (data, error) ->
+            , (error, data) ->
+                data.should.have.property('source')
                 eval(data.source)
                 done()

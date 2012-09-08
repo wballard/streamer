@@ -16,10 +16,11 @@ compilers =
     handlebars: require 'handlebars'
 
 
-#Just plain functions here
+#Get a merged set of defaults with overrides
 merge = (object, rest...) ->
     _.extend _.clone(object), rest...
 
+#Promise the full file name
 realpath = (options) ->
     defer = Q.defer()
     fs.realpath options.file_name, (err, full_file_name) ->
@@ -30,6 +31,7 @@ realpath = (options) ->
             defer.resolve options
     defer.promise
 
+#Promise to read the source from a file
 read = (options) ->
     defer = Q.defer()
     fs.readFile options.file_name, 'utf-8', (err, data) ->
@@ -40,11 +42,13 @@ read = (options) ->
             defer.resolve options
     defer.promise
 
+#Promise to compile the source from coffeescript to javascript
 coffeescript = (options) ->
     Q.fcall ->
         options.source = compilers.coffeescript.compile options.source, options
         options
 
+#Promise to uglify the source, returning compacted javascript
 uglify = (options) ->
     Q.fcall ->
         ast = compilers.uglify.parser.parse options.source
@@ -53,6 +57,7 @@ uglify = (options) ->
         options.source =  compilers.uglify.uglify.gen_code ast
         options
 
+#Promise to compile the source from handlebars to javascript
 handlebars = (options) ->
     Q.fcall ->
         template_function = compilers.handlebars.precompile options.source, options
@@ -62,13 +67,15 @@ handlebars = (options) ->
         options.source =
             """
             (function() {
-                var template = Handlebars.template, templates = Handlebars.templates = Handlebars.templates || {};
+                var template = Handlebars.template,
+                    templates = Handlebars.templates = Handlebars.templates || {};
                 templates['#{options.template_name}'] = template(#{options.source});
                 })();
             """
         options.name = options.template_name
         options
 
+#Run the compilation sequence for a file, calling back when done
 compile = (file_name, options, callback) ->
     #pick the right pipeline, then create a Q chain from it
     pipeline = options.pipelines[path.extname(file_name)]
@@ -90,9 +97,9 @@ compile = (file_name, options, callback) ->
     result
         .then (options) ->
             Q.fcall () ->
-                callback options, null
+                callback null, options
         .fail (error) ->
-            callback options, error
+            callback error, options
         .end()
 
 #our exported bits
@@ -115,10 +122,15 @@ exports.DEFAULTS = DEFAULTS =
 
 ###
 Connect middleware, this will stream compiled content on demand.
+If there is a file called /src/something.coffee, you just ask for
+it to be /src/something.coffee.js, and streamer will deliver a compilation
+from .coffee to .coffee.js.
 ###
 exports.deliver = (options) ->
     options = merge DEFAULTS, options
     match_mount = new RegExp "^#{options.mount}"
+
+    #This is the actual middleware
     (request, response, next) ->
         #should we try at all?
         if request.method isnt 'GET'
@@ -153,7 +165,7 @@ exports.deliver = (options) ->
 Watch a directory for source file changes, firing the callback with compiled
 source.
 @param {} options Take a look at DEFAULTS
-@param {Function) callback (data, error)
+@param {Function) node style callback (error, data)
 ###
 exports.watch = (options, callback) ->
     options = merge DEFAULTS, options
