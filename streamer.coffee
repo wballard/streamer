@@ -170,7 +170,10 @@ source.
 @param {Function) node style callback (error, data)
 ###
 exports.watch = (options, callback) ->
+    #defaults
     options = merge DEFAULTS, options
+    callback = callback or (error, data) ->
+
     watcher = chokidar.watch options.directory
     watcher.on 'error', (error) ->
         if options.log
@@ -182,4 +185,21 @@ exports.watch = (options, callback) ->
     watcher.on 'change', (path) ->
         options.why = 'filechange'
         compile path, options, callback
-    watcher
+    #watch is also middleware
+    middleware = (request, response, next) ->
+        if request.method isnt 'GET'
+            return next()
+        if url.parse(request.url).pathname.toLowerCase() is '/streamer/streamer.js'
+            console.log 'comp'
+            compile path.join(__dirname, 'client.coffee'), options, (error, data) ->
+                if error
+                    console.log error
+                    next()
+                else
+                    response.setHeader 'Content-Type', data.content_type
+                    response.statusCode = 201
+                    response.end data.source
+        else
+            next()
+    middleware.close = watcher.close
+    middleware

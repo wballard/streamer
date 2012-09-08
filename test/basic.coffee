@@ -26,7 +26,25 @@ describe 'can deliver code via GET', ->
 
 watcher = null
 
-describe 'callbacks from code changes', ->
+describe 'watch as middleware', ->
+
+    afterEach (done) ->
+        watcher.close()
+        done()
+
+    it 'provides a client library', (done) ->
+        watcher = streamer.watch()
+        app = connect()
+        app.use watcher
+        request(app)
+            .get('/streamer/streamer.js')
+            .expect('Content-Type', /javascript/)
+            .expect(201, done)
+
+
+
+
+describe 'provides callbacks from code changes', ->
 
     afterEach (done) ->
         watcher.close()
