@@ -46,6 +46,7 @@ read = (options) ->
 coffeescript = (options) ->
     Q.fcall ->
         options.source = compilers.coffeescript.compile options.source, options
+        options.content_type = 'javascript'
         options
 
 #Promise to uglify the source, returning compacted javascript
@@ -55,6 +56,7 @@ uglify = (options) ->
         ast = compilers.uglify.uglify.ast_mangle ast
         ast = compilers.uglify.uglify.ast_squeeze ast
         options.source =  compilers.uglify.uglify.gen_code ast
+        options.content_type = 'javascript'
         options
 
 #Promise to compile the source from handlebars to javascript
@@ -73,6 +75,7 @@ handlebars = (options) ->
                 })();
             """
         options.name = options.template_name
+        options.content_type = 'javascript'
         options
 
 #Run the compilation sequence for a file, calling back when done
@@ -150,13 +153,16 @@ exports.deliver = (options) ->
         if possible
             if options.log
                 console.log "possibly streaming #{possible}"
-            compile possible, options, (data, error) ->
+            compile possible, options, (error, data) ->
+                console.log data
                 if error
                     if options.log
                         console.log error
                     next()
                 else
                     response.setHeader 'Location', data.file_name
+                    response.setHeader 'Content-Type', data.content_type
+                    response.statusCode = 201
                     response.end data.source
         else
             next()

@@ -20,11 +20,9 @@ describe 'can deliver code via GET', ->
     it 'should be able to stream coffescript', (done) ->
         request(app)
             .get('/at/scratch.coffee.js')
-            .expect(200)
             .expect('Content-Type', /javascript/)
-            .end (req, res) ->
-                eval(res.body)
-                done()
+            .expect('Location', /scratch.coffee/)
+            .expect(201, done)
 
 
 watcher = null
