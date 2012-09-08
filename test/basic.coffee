@@ -28,14 +28,9 @@ watcher = null
 
 describe 'watch as middleware', ->
 
-    afterEach (done) ->
-        watcher.close()
-        done()
-
     it 'provides a client library', (done) ->
-        watcher = streamer.watch()
         app = connect()
-        app.use watcher
+        app.use(streamer.push())
         request(app)
             .get('/streamer/streamer.js')
             .expect('Content-Type', /javascript/)

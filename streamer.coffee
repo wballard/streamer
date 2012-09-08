@@ -169,15 +169,14 @@ source.
 @param {} options Take a look at DEFAULTS
 @param {Function) node style callback (error, data)
 ###
-exports.watch = (options, callback) ->
-    #defaults
+exports.watch = watch = (options, callback) ->
     options = merge DEFAULTS, options
     callback = callback or (error, data) ->
 
+    #the actual file watching and events
     watcher = chokidar.watch options.directory
     watcher.on 'error', (error) ->
-        if options.log
-            console.log error
+        callback error, null
     watcher.on 'add', (path) ->
         #this gets called on an add -- and as an initial walk when we turn on
         options.why = 'fileadd'
@@ -185,15 +184,36 @@ exports.watch = (options, callback) ->
     watcher.on 'change', (path) ->
         options.why = 'filechange'
         compile path, options, callback
-    #watch is also middleware
-    middleware = (request, response, next) ->
-        if request.method isnt 'GET'
-            return next()
-        if url.parse(request.url).pathname.toLowerCase() is '/streamer/streamer.js'
-            console.log 'comp'
+
+    watcher
+
+###
+Push code upates. This is middle ware that delivers a client library using
+socket.io, and sets up a socket.io connection point to watch for and push code
+changes.
+###
+exports.push = (options) ->
+    options = merge DEFAULTS, options
+    if options.io
+        io = options.io
+        #we really can't send socket over itself and
+        #options is the data context all the way down
+        options.io = null
+        io.sockets.on 'connection', (socket) ->
+            watcher = watch options, (error, data) ->
+                if error
+                    console.log(error) if options.log
+                else
+                    socket.emit 'code', data
+            socket.on 'disconnect', () ->
+                watcher.close()
+
+    #watch is also middleware that delivers a client library
+    (request, response, next) ->
+        if request.method is 'GET' and url.parse(request.url).pathname.toLowerCase() is '/streamer/streamer.js'
             compile path.join(__dirname, 'client.coffee'), options, (error, data) ->
                 if error
-                    console.log error
+                    console.log(error) if options.log
                     next()
                 else
                     response.setHeader 'Content-Type', data.content_type
@@ -201,5 +221,3 @@ exports.watch = (options, callback) ->
                     response.end data.source
         else
             next()
-    middleware.close = watcher.close
-    middleware

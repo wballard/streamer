@@ -33,6 +33,7 @@ resolveCode = (relative_name) ->
 #dynamically loaded
 socket = io.connect('')
 socket.on 'code', (data) =>
+    console.log 'code'
     #code comes in as a string, let's wrap and execute it as if it
     #was a CommonJS module, and store it named by the relative file path
     relative_name = data.file_name.replace data.directory, ''
