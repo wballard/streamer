@@ -14,12 +14,11 @@ describe 'can deliver code via GET', ->
     app = connect()
     app.use(streamer.deliver(
         directory: __dirname + '/src'
-        mount: '/at'
         log: false
     ))
     it 'should be able to stream coffescript', (done) ->
         request(app)
-            .get('/at/scratch.coffee.js')
+            .get('/scratch.coffee.js')
             .expect('Content-Type', /javascript/)
             .expect('Location', /scratch.coffee/)
             .expect(201, done)

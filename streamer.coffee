@@ -112,7 +112,6 @@ Default options for watch.
 ###
 exports.DEFAULTS = DEFAULTS =
     directory: process.cwd()
-    mount: '/'
     followLinks: true
     walk: true
     log: false
@@ -124,14 +123,15 @@ exports.DEFAULTS = DEFAULTS =
 
 
 ###
-Connect middleware, this will stream compiled content on demand.
+Connect middleware, this will deliver compiled content on demand via GET.
+@param {} options Take a look at DEFAULTS
+Example:
 If there is a file called /src/something.coffee, you just ask for
 it to be /src/something.coffee.js, and streamer will deliver a compilation
 from .coffee to .coffee.js.
 ###
 exports.deliver = (options) ->
     options = merge DEFAULTS, options
-    match_mount = new RegExp "^#{options.mount}"
 
     #This is the actual middleware
     (request, response, next) ->
@@ -139,9 +139,6 @@ exports.deliver = (options) ->
         if request.method isnt 'GET'
             return next()
         pathname = url.parse(request.url).pathname
-        if not match_mount.exec pathname
-            return next()
-        pathname = pathname.replace match_mount, ''
         pathname = path.join options.directory, pathname
         #now let's figure all the actual file names possible
         possible = null
@@ -154,7 +151,6 @@ exports.deliver = (options) ->
             if options.log
                 console.log "possibly streaming #{possible}"
             compile possible, options, (error, data) ->
-                console.log data
                 if error
                     if options.log
                         console.log error
@@ -175,7 +171,6 @@ source.
 ###
 exports.watch = (options, callback) ->
     options = merge DEFAULTS, options
-    #changes for sure
     watcher = chokidar.watch options.directory
     watcher.on 'error', (error) ->
         if options.log
