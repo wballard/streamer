@@ -73,14 +73,12 @@ handlebars = (options) ->
         options.source = String template_function
         options.source =
             """
-            console.log('h compiling #{options.template_name}');
             Handlebars = this.Handlebars || require('lib/handlebars.runtime.js')
             var template = Handlebars.template,
                 templates = Handlebars.templates = Handlebars.templates || {};
             exports =
                 templates['#{options.template_name}'] =
                 template(#{options.source});
-            console.log('h compiled #{options.template_name}');
             """
         options.name = options.template_name
         options.content_type = 'javascript'

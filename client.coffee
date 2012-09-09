@@ -28,6 +28,16 @@ Once that required code is loaded, your script will be run again, it may:
 - work without error
 - hit another require statement, triggering another dependency pass
 - errors our, in which case it is not available
+
+# Events
+## loadingcode
+Triggered with `(event, data, app)` where data is the information just back from the server over socket.io. This allows you to hook and intercept.
+## loadedcode `(event, data, app)` where data is the information now that the code is all the way loaded. You can no longer hook, but you know code is available.
+
+## Requirements
+This relies on jQuery being available to trigger events.
+
+
 ###
 
 #keep track of code as it is loading
@@ -36,25 +46,37 @@ loading = {}
 #loaded code modules are kept here along with their exports
 loaded = {}
 
-#call when we start loading, and this may just ask the server for bytes
-loadingCode = (socket, module_name, ask_server_for_code, force) ->
-    if (loading[module_name] or loaded[module_name]) and not force
-        #reload prevention
+#ask the server to start off a code load sequence
+loadCode = (socket, module_name, force) ->
+    console.log("asking server for #{module_name}") if app.log
+    if loading[module_name] and not force
+        #re-entrancy protection
     else
         loading[module_name] = true
-        if ask_server_for_code
-            socket.emit('load', module_name)
-        else
-            console.log "loading #{module_name}"
+        socket.emit('load', module_name)
+
+#call when we start loading, and this may just ask the server for bytes
+loadingCode = (socket, data, app, force) ->
+    module_name = data.module_name
+    if loading[module_name] and not force
+        #re-entrancy prevention
+    else
+        loading[module_name] = true
+        if $
+            $(window).trigger 'loadingcode', [data, app]
+        console.log "loading #{module_name}"
 
 #call when we are done loading
-loadedCode = (socket, module_name, module) ->
-    console.log("loaded #{module_name}", app) if app.log
-    loaded[module_name] = module
+loadedCode = (socket, data, app) ->
+    module_name = data.module_name
+    console.log("loaded #{module_name}") if app.log
+    loaded[module_name] = app.module
     #all dependent modules need to be reloaded
     dependent_modules = dependencies[module_name] or []
     for dependent_module, _ of dependent_modules
-        loadingCode socket, dependent_module, true, true
+        loadCode socket, dependent_module, true
+    if $
+        $(window).trigger 'loadedcode', data, app
 
 #keep track of dependencies built up via require
 dependencies = {}
@@ -67,19 +89,13 @@ trackRequirement = (module_name, requires_module_name) ->
 @app = app = {}
 app.log = true
 app.loaded = loaded
-#code promised in the future, take actions on this promise
-app.promiseCode = (module_name) ->
-    if not deferred[module_name]
-        deferred[module_name] = new $.Deferred()
-    deferred[module_name].promise()
-
 
 #hooking up to socket.io to get code updates, this is where templates
 #and code come from -- and this is it, the rest of the application is
 #dynamically loaded
 socket = io.connect('')
 socket.on 'code', (data) ->
-    loadingCode socket, data.module_name, false, true
+    loadingCode socket, data, app, true
     #a context that shorts out part of the application, so that app is still
     #our 'global', but we can have a temporaty exports and module buffer
     #this approach lets libraries like handlebars that install into a global
@@ -94,7 +110,7 @@ socket.on 'code', (data) ->
         #first things first, we may actually have code already loaded
         return loaded[module_name] if loaded[module_name]
         #and of course, we need to load the required module, if it isn't around
-        loadingCode socket, module_name, true, false
+        loadCode socket, module_name
         throw "#{module_name} not yet available"
     #call in context, 'this' is app for the injected code, so all our hot loaded
     #code is run inside the app, not in the browser or global
@@ -104,10 +120,9 @@ socket.on 'code', (data) ->
                 require = this.require;
                 exports = this.exports;
                 module = this.module;
-                console.log(this);
                 #{data.source}
             """).call(app)
-        loadedCode(socket, data.module_name, app.module)
+        loadedCode(socket, data, app)
     catch e
         console.log(e, data, app) if app.log
 
