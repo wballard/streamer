@@ -34,10 +34,14 @@ realpath = (options) ->
 #Promise to read the source from a file
 read = (options) ->
     defer = Q.defer()
+    options.module_name =
+        options.module_name or (options.file_name.replace options.directory, '')
     fs.readFile options.file_name, 'utf-8', (err, data) ->
         if err
             defer.reject err
         else
+            options.module_file_names[options.module_name] =
+                options.file_name
             options.source = data
             defer.resolve options
     defer.promise
@@ -64,15 +68,19 @@ handlebars = (options) ->
     Q.fcall ->
         template_function = compilers.handlebars.precompile options.source, options
         template_name = options.file_name.replace options.directory, ''
-        options.template_name = template_name.replace path.extname(template_name), ''
+        options.template_name =
+            template_name.replace path.extname(template_name), ''
         options.source = String template_function
         options.source =
             """
-            (function() {
-                var template = Handlebars.template,
-                    templates = Handlebars.templates = Handlebars.templates || {};
-                templates['#{options.template_name}'] = template(#{options.source});
-                })();
+            console.log('h compiling #{options.template_name}');
+            Handlebars = this.Handlebars || require('lib/handlebars.runtime.js')
+            var template = Handlebars.template,
+                templates = Handlebars.templates = Handlebars.templates || {};
+            exports =
+                templates['#{options.template_name}'] =
+                template(#{options.source});
+            console.log('h compiled #{options.template_name}');
             """
         options.name = options.template_name
         options.content_type = 'javascript'
@@ -108,16 +116,21 @@ compile = (file_name, options, callback) ->
 #our exported bits
 ###
 Default options for watch.
-@param
 ###
 exports.DEFAULTS = DEFAULTS =
+    #this is a module name to file name translation table that is updated
+    #any time a module is loaded
+    module_file_names: {}
+    #root directory where we'll build relative paths from
     directory: process.cwd()
+    #follow links on file watching
     followLinks: true
-    walk: true
     log: false
     pipelines:
         '.coffee': [read, coffeescript]
+        '.js': [read]
         '.handlebars': [read, handlebars]
+        '': [read]
     makes:
         '.coffee.js': '.coffee'
 
@@ -148,8 +161,7 @@ exports.deliver = (options) ->
                 possible = pathname.replace match_to, from
                 break
         if possible
-            if options.log
-                console.log "possibly streaming #{possible}"
+            console.log("possibly streaming #{possible}") if options.log
             compile possible, options, (error, data) ->
                 if error
                     if options.log
@@ -194,30 +206,52 @@ changes.
 ###
 exports.push = (options) ->
     options = merge DEFAULTS, options
+
+
     if options.io
         io = options.io
         #we really can't send socket over itself and
         #options is the data context all the way down
         options.io = null
         io.sockets.on 'connection', (socket) ->
+            #a client has connected to us, time to look for code changes
             watcher = watch options, (error, data) ->
                 if error
                     console.log(error) if options.log
                 else
                     socket.emit 'code', data
+
+            socket.on 'load', (module_name) ->
+                #this is an explicit request to load code
+                if options.module_file_names[module_name]
+                    load_from_file = options.module_file_names[module_name]
+                else if module_name[0] is '/'
+                    load_from_file = module_name
+                else
+                    load_from_file = path.join(__dirname, module_name)
+                compile load_from_file, options,
+                    (error, data) ->
+                        if error
+                            console.log error
+                        else
+                            data.module_name = module_name
+                            socket.emit 'code', data
+
             socket.on 'disconnect', () ->
+                #clean up the file watcher
                 watcher.close()
 
     #watch is also middleware that delivers a client library
     (request, response, next) ->
         if request.method is 'GET' and url.parse(request.url).pathname.toLowerCase() is '/streamer/streamer.js'
-            compile path.join(__dirname, 'client.coffee'), options, (error, data) ->
-                if error
-                    console.log(error) if options.log
-                    next()
-                else
-                    response.setHeader 'Content-Type', data.content_type
-                    response.statusCode = 201
-                    response.end data.source
+            compile path.join(__dirname, 'client.coffee'), options,
+                (error, data) ->
+                    if error
+                        console.log(error) if options.log
+                        next()
+                    else
+                        response.setHeader 'Content-Type', data.content_type
+                        response.statusCode = 201
+                        response.end data.source
         else
             next()
