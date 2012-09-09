@@ -76,9 +76,9 @@ handlebars = (options) ->
             Handlebars = this.Handlebars || require('lib/handlebars.runtime.js')
             var template = Handlebars.template,
                 templates = Handlebars.templates = Handlebars.templates || {};
-            exports =
-                templates['#{options.template_name}'] =
-                template(#{options.source});
+            module.id = '#{options.template_name}';
+            module.exports = template(#{options.source});
+            templates[module.id] = module.exports;
             """
         options.name = options.template_name
         options.content_type = 'javascript'

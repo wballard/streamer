@@ -64,7 +64,7 @@ loadingCode = (socket, data, app, force) ->
         loading[module_name] = true
         if $
             $(window).trigger 'loadingcode', [data, app]
-        console.log "loading #{module_name}"
+        console.log("loading #{module_name}") if app.log
 
 #call when we are done loading
 loadedCode = (socket, data, app) ->
@@ -76,7 +76,7 @@ loadedCode = (socket, data, app) ->
     for dependent_module, _ of dependent_modules
         loadCode socket, dependent_module, true
     if $
-        $(window).trigger 'loadedcode', data, app
+        $(window).trigger 'loadedcode', [data, app]
 
 #keep track of dependencies built up via require
 dependencies = {}
@@ -87,7 +87,7 @@ trackRequirement = (module_name, requires_module_name) ->
 
 #make things visible at the top level as an app
 @app = app = {}
-app.log = true
+app.log = false
 app.loaded = loaded
 
 #hooking up to socket.io to get code updates, this is where templates
