@@ -93,7 +93,8 @@ app.loaded = loaded
 #hooking up to socket.io to get code updates, this is where templates
 #and code come from -- and this is it, the rest of the application is
 #dynamically loaded
-socket = io.connect('')
+host = host or 'http://localhost'
+socket = io.connect("#{host}/streamer")
 socket.on 'code', (data) ->
     loadingCode socket, data, app, true
     #a context that shorts out part of the application, so that app is still

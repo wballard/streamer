@@ -46,6 +46,13 @@ read = (options) ->
             defer.resolve options
     defer.promise
 
+#shove in some extra lines of text
+injector = (options) ->
+    Q.fcall ->
+        if options.inject
+            options.source = "#{options.inject}\n#{options.source}"
+        options
+
 #Promise to compile the source from coffeescript to javascript
 coffeescript = (options) ->
     Q.fcall ->
@@ -131,7 +138,7 @@ exports.DEFAULTS = DEFAULTS =
     followLinks: true
     log: false
     pipelines:
-        '.coffee': [read, coffeescript]
+        '.coffee': [read, injector, coffeescript]
         '.js': [read]
         '.handlebars': [read, handlebars, template]
         '': [read]
@@ -217,7 +224,7 @@ exports.push = (options) ->
         #we really can't send socket over itself and
         #options is the data context all the way down
         options.io = null
-        io.sockets.on 'connection', (socket) ->
+        io.of('/streamer').on 'connection', (socket) ->
             #a client has connected to us, time to look for code changes
             watcher = watch options, (error, data) ->
                 if error
@@ -248,6 +255,11 @@ exports.push = (options) ->
     #watch is also middleware that delivers a client library
     (request, response, next) ->
         if request.method is 'GET' and url.parse(request.url).pathname.toLowerCase() is '/streamer/streamer.js'
+            if request.headers.referer
+                referer_protocol = url.parse(request.headers.referer).protocol
+            else
+                referer_protocol = 'http:'
+            options.inject = "host = '#{referer_protocol}//#{request.headers.host}'"
             compile path.join(__dirname, 'client.coffee'), options,
                 (error, data) ->
                     if error
