@@ -88,6 +88,7 @@ handlebars = (options) ->
 template = (options) ->
     Q.fcall ->
         options.template = true
+        options
 
 #Run the compilation sequence for a file, calling back when done
 compile = (file_name, options, callback) ->
