@@ -84,6 +84,11 @@ handlebars = (options) ->
         options.content_type = 'javascript'
         options
 
+#marker when we have compiled a template function, not just plain code
+template = (options) ->
+    Q.fcall ->
+        options.template = true
+
 #Run the compilation sequence for a file, calling back when done
 compile = (file_name, options, callback) ->
     #pick the right pipeline, then create a Q chain from it
@@ -127,7 +132,7 @@ exports.DEFAULTS = DEFAULTS =
     pipelines:
         '.coffee': [read, coffeescript]
         '.js': [read]
-        '.handlebars': [read, handlebars]
+        '.handlebars': [read, handlebars, template]
         '': [read]
     makes:
         '.coffee.js': '.coffee'

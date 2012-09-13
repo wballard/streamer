@@ -74,4 +74,5 @@ describe 'provides callbacks from code changes', ->
             directory: __dirname + '/src/scratch.handlebars'
             , (error, data) ->
                 data.should.have.property('source')
+                data.should.have.property('template')
                 done()
