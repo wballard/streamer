@@ -69,7 +69,7 @@ loadingCode = (socket, data, app, force) ->
 #call when we are done loading
 loadedCode = (socket, data, app) ->
     module_name = data.module_name
-    console.log("loaded #{module_name}") if app.log
+    console.log("loaded #{data.module_name} from #{data.file_name}") if app.log
     loaded[module_name] = app.module
     #all dependent modules need to be reloaded
     dependent_modules = dependencies[module_name] or []
@@ -87,7 +87,7 @@ trackRequirement = (module_name, requires_module_name) ->
 
 #make things visible at the top level as an app
 @app = app = {}
-app.log = false
+app.log = true
 app.loaded = loaded
 
 #hooking up to socket.io to get code updates, this is where templates
@@ -109,7 +109,9 @@ socket.on 'code', (data) ->
         #requirements set up a dependency chain
         trackRequirement data.module_name, module_name
         #first things first, we may actually have code already loaded
-        return loaded[module_name] if loaded[module_name]
+        if loaded[module_name]
+            console.log "#{module_name} is loaded"
+            return loaded[module_name]
         #and of course, we need to load the required module, if it isn't around
         loadCode socket, module_name
         throw "#{module_name} not yet available"

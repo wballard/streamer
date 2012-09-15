@@ -36,6 +36,8 @@ read = (options) ->
     defer = Q.defer()
     options.module_name =
         options.module_name or (options.file_name.replace options.directory, '')
+    if options.module_name[0] is '/'
+        options.module_name = options.module_name.slice(1)
     fs.readFile options.file_name, 'utf-8', (err, data) ->
         if err
             defer.reject err
@@ -80,7 +82,7 @@ handlebars = (options) ->
         options.source = String template_function
         options.source =
             """
-            Handlebars = this.Handlebars || require('lib/handlebars.runtime.js')
+            Handlebars = this.Handlebars || require('handlebars.runtime.js')
             var template = Handlebars.template,
                 templates = Handlebars.templates = Handlebars.templates || {};
             module.id = '#{options.template_name}';
@@ -106,7 +108,7 @@ compile = (file_name, options, callback) ->
             console.log "no pipeline for #{file_name}"
         return
     if options.log
-        console.log "compiling #{file_name} #{options.directory}"
+        console.log "compiling #{file_name}"
     options = merge {file_name: file_name}, options
 
     #and a promise chain, adding in the compiler sequences as a pipeline
@@ -119,6 +121,8 @@ compile = (file_name, options, callback) ->
     result
         .then (options) ->
             Q.fcall () ->
+                if options.log
+                    console.log "compiled #{file_name}"
                 callback null, options
         .fail (error) ->
             callback error, options
@@ -131,7 +135,8 @@ Default options for watch.
 exports.DEFAULTS = DEFAULTS =
     #this is a module name to file name translation table that is updated
     #any time a module is loaded
-    module_file_names: {}
+    module_file_names:
+        'handlebars.runtime.js': path.join(__dirname, 'lib', 'handlebars.runtime.js')
     #root directory where we'll build relative paths from
     directory: process.cwd()
     #follow links on file watching
@@ -235,11 +240,10 @@ exports.push = (options) ->
             socket.on 'load', (module_name) ->
                 #this is an explicit request to load code
                 if options.module_file_names[module_name]
+                    #a name we recognize, in which case we look up the file name
                     load_from_file = options.module_file_names[module_name]
-                else if module_name[0] is '/'
-                    load_from_file = module_name
                 else
-                    load_from_file = path.join(__dirname, module_name)
+                    load_from_file = path.join(options.directory, module_name)
                 compile load_from_file, options,
                     (error, data) ->
                         if error
