@@ -1,6 +1,4 @@
 ###
-# Overview
-
 This is the main application script. It:
 
 - defines a root application, store at this.app, which in the browser is window.app
@@ -12,31 +10,47 @@ This is the main application script. It:
 - tracks modules by their module.id
 - connects socket.io to get hot code updates
 
-# Hot Updates
-Any time you change a watched module, it will be redelivered to this client via socket.io. Even more than that, the require chain is a dependency graph, so that modules will be rebound when lower level dependencies change.
+## Hot Updates
+Any time you change a watched module, it will be redelivered to this client via
+socket.io. Even more than that, the require chain is a dependency graph, so
+that modules will be rebound when lower level dependencies change.
 
-# Two Pass {#two-pass}
-Code loading will make *at least* two passes if there is a require statement. This is actually running the code, not trying to tweak past it with regular expressions that short out require, since require can plenty well be a function on function!
+## Two Pass {#two-pass}
+Code loading will make *at least* two passes if there is a require statement.
+This is actually running the code, not trying to tweak past it with regular
+expressions that short out require, since require can plenty well be a function
+on function!
 
-Code needs to be reloadable, which means that it will be run more than once in a given browser session. With this in mind, you will need to pay attention to a few key things at the top level of your script
-- If you register events, you should do so with namespaces and turn them off at the start of your script
+Code needs to be reloadable, which means that it will be run more than once in
+a given browser session. With this in mind, you will need to pay attention to a
+few key things at the top level of your script
+- If you register events, you should do so with namespaces and turn them off at
+the start of your script
 - If you manipulate the DOM, you should be prepared to remove your changes
 
-Now, if you put your event registration and DOM manipulation in event handlers then this is less of a concern, just know that your script will *run* when it is hot loaded. And it will be run at least twice if you use require at all. This is because the require system will set a dependency, and likley that code will not be available. So, your script on the first run will end up with a require that doesn't quite work yet!
+Now, if you put your event registration and DOM manipulation in event handlers
+then this is less of a concern, just know that your script will *run* when it
+is hot loaded. And it will be run at least twice if you use require at all.
+This is because the require system will set a dependency, and likley that code
+will not be available. So, your script on the first run will end up with a
+require that doesn't quite work yet!
 
 Once that required code is loaded, your script will be run again, it may:
 - work without error
 - hit another require statement, triggering another dependency pass
 - errors our, in which case it is not available
 
-# Events
-## loadingcode
-Triggered with `(event, data, app)` where data is the information just back from the server over socket.io. This allows you to hook and intercept.
-## loadedcode `(event, data, app)` where data is the information now that the code is all the way loaded. You can no longer hook, but you know code is available.
+## Events
+- `loadingcode` Triggered with `(event, data, app)` where data is the
+information just back from the server over socket.io. This allows you to hook
+and intercept.
+
+- `loadedcode` Triggered with `(event, data, app)` where data is the
+information now that the code is all the way loaded. You can no longer hook,
+but you know code is available.
 
 ## Requirements
 This relies on jQuery being available to trigger events.
-
 
 ###
 
@@ -85,9 +99,12 @@ trackRequirement = (module_name, requires_module_name) ->
     chain[module_name] = true
     dependencies[requires_module_name] = chain
 
-#make things visible at the top level as an app
+###
+Make things visible at the top level as an 'app'. This ends up being our single
+root variable.
+###
 @app = app = {}
-app.log = true
+app.log = false
 app.loaded = loaded
 
 #hooking up to socket.io to get code updates, this is where templates
@@ -110,7 +127,7 @@ socket.on 'code', (data) ->
         trackRequirement data.module_name, module_name
         #first things first, we may actually have code already loaded
         if loaded[module_name]
-            console.log "#{module_name} is loaded"
+            console.log("#{module_name} is loaded") if app.log
             return loaded[module_name]
         #and of course, we need to load the required module, if it isn't around
         loadCode socket, module_name
