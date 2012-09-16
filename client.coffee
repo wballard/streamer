@@ -54,11 +54,17 @@ This relies on jQuery being available to trigger events.
 
 ###
 
-#keep track of code as it is loading
-loading = {}
-
+###
+Make things visible at the top level as an 'app'. This ends up being our single
+root variable.
+###
+@app = app = {}
+#flip this to true to get a lot of logging messages
+app.log = false
 #loaded code modules are kept here along with their exports
-loaded = {}
+app.loaded = loaded = {}
+#keep track of code as it is loading
+app.loading = loading = {}
 
 #ask the server to start off a code load sequence
 loadCode = (socket, module_name, force) ->
@@ -99,13 +105,7 @@ trackRequirement = (module_name, requires_module_name) ->
     chain[module_name] = true
     dependencies[requires_module_name] = chain
 
-###
-Make things visible at the top level as an 'app'. This ends up being our single
-root variable.
-###
-@app = app = {}
-app.log = false
-app.loaded = loaded
+
 
 #hooking up to socket.io to get code updates, this is where templates
 #and code come from -- and this is it, the rest of the application is
