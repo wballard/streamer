@@ -59,7 +59,7 @@ injector = (options) ->
 coffeescript = (options) ->
     Q.fcall ->
         options.source = compilers.coffeescript.compile options.source, options
-        options.content_type = 'javascript'
+        options.content_type = 'application/javascript'
         options
 
 #Promise to uglify the source, returning compacted javascript
@@ -69,7 +69,7 @@ uglify = (options) ->
         ast = compilers.uglify.uglify.ast_mangle ast
         ast = compilers.uglify.uglify.ast_squeeze ast
         options.source =  compilers.uglify.uglify.gen_code ast
-        options.content_type = 'javascript'
+        options.content_type = 'application/javascript'
         options
 
 #Promise to compile the source from handlebars to javascript
@@ -90,7 +90,7 @@ handlebars = (options) ->
             templates[module.id] = module.exports;
             """
         options.name = options.template_name
-        options.content_type = 'javascript'
+        options.content_type = 'application/javascript'
         options
 
 #marker when we have compiled a template function, not just plain code
