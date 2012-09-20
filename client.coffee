@@ -89,7 +89,7 @@ loadingCode = (socket, data, app, force) ->
 #call when we are done loading
 loadedCode = (socket, data, app) ->
     module_name = data.module_name
-    console.log("loaded #{data.module_name} from #{data.file_name}") if app.log
+    console.log("loaded #{data.module_name} #{data.name} from #{data.file_name}") if app.log
     loaded[module_name] = app.module
     #all dependent modules need to be reloaded
     dependent_modules = dependencies[module_name] or []
@@ -131,6 +131,7 @@ socket.on 'code', (data) ->
             return loaded[module_name]
         #and of course, we need to load the required module, if it isn't around
         loadCode socket, module_name
+        console.log("#{module_name} not yet available") if app.log
         throw "#{module_name} not yet available"
     #call in context, 'this' is app for the injected code, so all our hot loaded
     #code is run inside the app, not in the browser or global
@@ -144,6 +145,6 @@ socket.on 'code', (data) ->
             """).call(app)
         loadedCode(socket, data, app)
     catch e
-        console.log(e, data, app) if app.log
+        console.log(e, e.stack, data, app) if app.log
 
 

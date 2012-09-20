@@ -71,8 +71,9 @@ describe 'provides callbacks from code changes', ->
 
     it 'knows about handlebars', (done) ->
         watcher = streamer.watch
-            directory: __dirname + '/src/scratch.handlebars'
+            directory: __dirname + '/src/hb'
             , (error, data) ->
                 data.should.have.property('source')
                 data.should.have.property('template')
+                data.short_name.should.equal('scratch')
                 done()

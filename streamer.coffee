@@ -38,6 +38,10 @@ read = (options) ->
         options.module_name or (options.file_name.replace options.directory, '')
     if options.module_name[0] is '/'
         options.module_name = options.module_name.slice(1)
+    #a short name, just a base file name without extension
+    options.short_name  = options.file_name.replace options.directory, ''
+    options.short_name  = path.basename options.short_name, path.extname options.short_name
+    #and read on in the file content
     fs.readFile options.file_name, 'utf-8', (err, data) ->
         if err
             defer.reject err
@@ -75,6 +79,19 @@ uglify = (options) ->
 #Promise to compile the source from handlebars to javascript
 handlebars = (options) ->
     Q.fcall ->
+
+        #referenced partials need to be extracted
+        partials = []
+        ast = compilers.handlebars.parse options.source
+        recurseForPartials = (o) ->
+            if o.statements
+                for statement in o.statements
+                    if statement?.type is 'partial'
+                        partials.push statement?.id?.string
+                    if statement.program
+                        recurseForPartials statement.program
+        recurseForPartials ast
+
         template_function = compilers.handlebars.precompile options.source, options
         template_name = options.file_name.replace options.directory, ''
         options.template_name =
@@ -84,10 +101,12 @@ handlebars = (options) ->
             """
             Handlebars = this.Handlebars || require('handlebars.runtime.js')
             var template = Handlebars.template,
-                templates = Handlebars.templates = Handlebars.templates || {};
+                templates = Handlebars.templates || {},
+                partials = Handlebars.partials || {};
             module.id = '#{options.template_name}';
             module.exports = template(#{options.source});
             templates[module.id] = module.exports;
+            partials['#{options.short_name}'] = module.exports;
             """
         options.name = options.template_name
         options.content_type = 'application/javascript'
