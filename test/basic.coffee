@@ -75,5 +75,14 @@ describe 'provides callbacks from code changes', ->
             , (error, data) ->
                 data.should.have.property('source')
                 data.should.have.property('template')
-                data.short_name.should.equal('scratch')
+                #this is a handlebars template, and should show up as runnable code
+                context =
+                    Handlebars: Handlebars
+                    module: {}
+                Function("""
+                module = this.module;
+                #{data.source}
+                """).call(context)
+                context.module.id.should.equal('/scratch')
+                context.Handlebars.partials.should.have.property('this_is_scratch')
                 done()

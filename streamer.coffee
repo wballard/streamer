@@ -38,9 +38,6 @@ read = (options) ->
         options.module_name or (options.file_name.replace options.directory, '')
     if options.module_name[0] is '/'
         options.module_name = options.module_name.slice(1)
-    #a short name, just a base file name without extension
-    options.short_name  = options.file_name.replace options.directory, ''
-    options.short_name  = path.basename options.short_name, path.extname options.short_name
     #and read on in the file content
     fs.readFile options.file_name, 'utf-8', (err, data) ->
         if err
@@ -81,13 +78,22 @@ handlebars = (options) ->
     Q.fcall ->
 
         #referenced partials need to be extracted
-        partials = []
+        needs_partials = []
+        provides_partials = []
+
         ast = compilers.handlebars.parse options.source
         recurseForPartials = (o) ->
             if o.statements
                 for statement in o.statements
+                    if statement?.type is 'mustache'
+                        if statement?.id?.string is 'registerPartial'
+                            for param in (statement.params or [])
+                                provides_partials.push param?.string
+
+                    #asking for a partial sets up a dependency
                     if statement?.type is 'partial'
-                        partials.push statement?.id?.string
+                        needs_partials.push statement?.id?.string
+                    #deal with handlebars being nested
                     if statement.program
                         recurseForPartials statement.program
         recurseForPartials ast
@@ -106,8 +112,15 @@ handlebars = (options) ->
             module.id = '#{options.template_name}';
             module.exports = template(#{options.source});
             templates[module.id] = module.exports;
-            partials['#{options.short_name}'] = module.exports;
+            //special helper that returns no content, but hooks up a partial
+            //via prior introspection
+            Handlebars.registerHelper("registerPartial", function(name) {
+                return "";
+            });
             """
+        #use the prior introspection to provide the partials
+        for name in provides_partials
+            options.source += "\npartials['#{name}'] = module.exports;"
         options.name = options.template_name
         options.content_type = 'application/javascript'
         options
