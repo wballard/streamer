@@ -75,6 +75,15 @@ describe 'provides callbacks from code changes', ->
             , (error, data) ->
                 data.should.have.property('source')
                 data.should.have.property('template')
+                #if you use a partial, as is the case in this template, you
+                #depend on it by name
+                data.depends_on.should.eql(['somepartial'])
+                #and since this is a template that registers as a partial
+                data.provides.should.eql [
+                    '/Users/wballard/streamer/test/src/hb/scratch.handlebars',
+                    '/Users/wballard/streamer/test/src/hb/scratch',
+                    '/scratch.handlebars',
+                    '/scratch' ]
                 #this is a handlebars template, and should show up as runnable code
                 context =
                     Handlebars: Handlebars
@@ -83,6 +92,7 @@ describe 'provides callbacks from code changes', ->
                 module = this.module;
                 #{data.source}
                 """).call(context)
-                context.module.id.should.equal('/scratch')
+                #self registration as a partial with a supplied name in the
+                #source {{registerPartial ...}} tag
                 context.Handlebars.partials.should.have.property('this_is_scratch')
                 done()

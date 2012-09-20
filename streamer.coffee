@@ -46,6 +46,15 @@ read = (options) ->
             options.module_file_names[options.module_name] =
                 options.file_name
             options.source = data
+            options.provides.push options.file_name
+            #name without extension
+            options.provides.push options.file_name.replace path.extname(options.file_name), ''
+            #name without the relative directory
+            options.provides.push options.file_name.replace options.directory, ''
+            #and hey -- without the name or relative directory
+            options.provides.push \
+                (options.file_name.replace options.directory, '').replace \
+                    path.extname(options.file_name), ''
             defer.resolve options
     defer.promise
 
@@ -97,11 +106,10 @@ handlebars = (options) ->
                     if statement.program
                         recurseForPartials statement.program
         recurseForPartials ast
+        options.depends_on = needs_partials
 
+        #compile that source, and get a function post compilation
         template_function = compilers.handlebars.precompile options.source, options
-        template_name = options.file_name.replace options.directory, ''
-        options.template_name =
-            template_name.replace path.extname(template_name), ''
         options.source = String template_function
         options.source =
             """
@@ -109,7 +117,6 @@ handlebars = (options) ->
             var template = Handlebars.template,
                 templates = Handlebars.templates || {},
                 partials = Handlebars.partials || {};
-            module.id = '#{options.template_name}';
             module.exports = template(#{options.source});
             templates[module.id] = module.exports;
             //special helper that returns no content, but hooks up a partial
@@ -142,6 +149,8 @@ compile = (file_name, options, callback) ->
     if options.log
         console.log "compiling #{file_name}"
     options = merge {file_name: file_name}, options
+    options.depends_on = []
+    options.provides = []
 
     #and a promise chain, adding in the compiler sequences as a pipeline
     result = Q.resolve options
