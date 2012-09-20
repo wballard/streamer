@@ -113,21 +113,22 @@ handlebars = (options) ->
         options.source = String template_function
         options.source =
             """
-            Handlebars = this.Handlebars || require('handlebars.runtime.js')
-            var template = Handlebars.template,
-                templates = Handlebars.templates || {},
-                partials = Handlebars.partials || {};
-            module.exports = template(#{options.source});
-            templates[module.id] = module.exports;
+            Handlebars = this.Handlebars || require('handlebars.runtime.js');
+            Handlebars.templates = Handlebars.templates || {};
+            Handlebars.partials = Handlebars.partials || {};
+            module.exports = Handlebars.template(#{options.source});
             //special helper that returns no content, but hooks up a partial
             //via prior introspection
             Handlebars.registerHelper("registerPartial", function(name) {
                 return "";
             });
             """
+        #all of our available provides names, these are templates
+        for name in options.provides
+            options.source += "\nHandlebars.templates['#{name}'] = module.exports;"
         #use the prior introspection to provide the partials
         for name in provides_partials
-            options.source += "\npartials['#{name}'] = module.exports;"
+            options.source += "\nHandlebars.partials['#{name}'] = module.exports;"
         options.name = options.template_name
         options.content_type = 'application/javascript'
         options
