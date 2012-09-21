@@ -89,8 +89,10 @@ describe 'provides callbacks from code changes', ->
                 context =
                     Handlebars: Handlebars
                     module: {}
+                    exports: {}
                 Function("""
                 module = this.module;
+                exports = this.exports;
                 #{data.source}
                 """).call(context)
                 #self registration as the file name as a template

@@ -91,12 +91,12 @@ loadedCode = (socket, data, app) ->
     #there is a base module_name
     module_name = data.module_name
     console.log("loaded #{data.module_name} from #{data.file_name}", data) if app.log
-    loaded[module_name] = app.module
+    loaded[module_name] = data
 
     #modules have multiple names that they provide
     for other_name in data.provides
         #record this module with each of its names it provides
-        loaded[other_name] = app.module
+        loaded[other_name] = data
         #all dependent modules need to be reloaded for the name
         dependent_modules = dependencies[other_name] or {}
         for dependent_module, _ of dependent_modules
@@ -132,10 +132,9 @@ socket.on 'code', (data) ->
     #our 'global', but we can have a temporaty exports and module buffer
     #this approach lets libraries like handlebars that install into a global
     #'this' get hooked into our app, not window.
-    app.exports = {}
     app.module =
             id: data.module_name
-            exports: app.exports
+            exports: {}
     app.require = (module_name) ->
         #requirements set up a dependency chain
         trackRequirement data.file_name, module_name
@@ -153,10 +152,14 @@ socket.on 'code', (data) ->
         Function(
             """
                 require = this.require;
-                exports = this.exports;
+                exports = this.module.exports;
                 module = this.module;
                 #{data.source}
             """).call(app)
+        data.exports = app.module.exports
+        data.module_name = app.module.id
+        #clean this temp context creator off
+        app.module = null
         loadedCode(socket, data, app)
     catch e
         console.log(e, e.stack, data, app) if app.log
