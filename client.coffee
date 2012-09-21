@@ -89,17 +89,23 @@ loadingCode = (socket, data, app, force) ->
 #call when we are done loading
 loadedCode = (socket, data, app) ->
     module_name = data.module_name
-    console.log("loaded #{data.module_name} from #{data.file_name}") if app.log
+    console.log("loaded #{data.module_name} from #{data.file_name}", data) if app.log
     loaded[module_name] = app.module
-    #all dependent modules need to be reloaded
-    dependent_modules = dependencies[module_name] or []
-    for dependent_module, _ of dependent_modules
-        loadCode socket, dependent_module, true
+    #modules have multiple names that they provide
+    for other_name in data.provides
+        loaded[other_name] = app.module
+        #all dependent modules need to be reloaded
+        dependent_modules = dependencies[other_name] or {}
+        for dependent_module, _ of dependent_modules
+            #TODO FULL PATH
+            loadCode socket, dependent_module, true
+    #all the tracking data structures are set up, fire the event
+    #so that we can reload
     if $
         $(window).trigger 'loadedcode', [data, app]
 
 #keep track of dependencies built up via require
-dependencies = {}
+app.dependencies = dependencies = {}
 trackRequirement = (module_name, requires_module_name) ->
     chain = dependencies[requires_module_name] or {}
     chain[module_name] = true
@@ -122,7 +128,7 @@ socket.on 'code', (data) ->
             exports: app.exports
     app.require = (module_name) ->
         #requirements set up a dependency chain
-        trackRequirement data.module_name, module_name
+        trackRequirement data.file_name, module_name
         #first things first, we may actually have code already loaded
         if loaded[module_name]
             console.log("#{module_name} is loaded") if app.log

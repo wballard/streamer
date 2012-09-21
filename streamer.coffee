@@ -43,9 +43,8 @@ read = (options) ->
         if err
             defer.reject err
         else
-            options.module_file_names[options.module_name] =
-                options.file_name
             options.source = data
+            #full file name is provided
             options.provides.push options.file_name
             #name without extension
             options.provides.push options.file_name.replace path.extname(options.file_name), ''
@@ -55,6 +54,10 @@ read = (options) ->
             options.provides.push \
                 (options.file_name.replace options.directory, '').replace \
                     path.extname(options.file_name), ''
+            #and well known modules
+            for name, file_name of options.module_file_names
+                if file_name is options.file_name
+                    options.provides.push name
             defer.resolve options
     defer.promise
 
@@ -163,8 +166,7 @@ compile = (file_name, options, callback) ->
     result
         .then (options) ->
             Q.fcall () ->
-                if options.log
-                    console.log "compiled #{file_name}"
+                console.log("compiled #{file_name}") if options.log
                 callback null, options
         .fail (error) ->
             callback error, options
@@ -175,8 +177,7 @@ compile = (file_name, options, callback) ->
 Default options for watch.
 ###
 exports.DEFAULTS = DEFAULTS =
-    #this is a module name to file name translation table that is updated
-    #any time a module is loaded
+    #this is a module name to file name translation table for well known modules
     module_file_names:
         'handlebars.runtime.js': path.join(__dirname, 'lib', 'handlebars.runtime.js')
     #root directory where we'll build relative paths from
@@ -284,6 +285,9 @@ exports.push = (options) ->
                 if options.module_file_names[module_name]
                     #a name we recognize, in which case we look up the file name
                     load_from_file = options.module_file_names[module_name]
+                else if module_name[0] is '/'
+                    #assume this to be a full path when we have a prefix
+                    load_from_file = module_name
                 else
                     load_from_file = path.join(options.directory, module_name)
                 compile load_from_file, options,
