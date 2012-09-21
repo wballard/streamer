@@ -8,7 +8,7 @@ streamer = require '../streamer.coffee'
 request = require 'supertest'
 connect = require 'connect'
 Handlebars = require 'handlebars'
-
+path = require 'path'
 
 describe 'can deliver code via GET', ->
     app = connect()
@@ -80,8 +80,8 @@ describe 'provides callbacks from code changes', ->
                 data.depends_on.should.eql(['somepartial'])
                 #and since this is a template that registers as a partial
                 data.provides.should.eql [
-                    '/Users/wballard/streamer/test/src/hb/scratch.handlebars',
-                    '/Users/wballard/streamer/test/src/hb/scratch',
+                    path.join(__dirname, 'src/hb/scratch.handlebars'),
+                    path.join(__dirname, 'src/hb/scratch'),
                     '/scratch.handlebars',
                     '/scratch',
                     'this_is_scratch']
