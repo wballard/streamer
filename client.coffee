@@ -108,7 +108,7 @@ loadedCode = (socket, data, app) ->
         trackRequirement data.file_name, dependency
 
     #all the tracking data structures are set up, fire the event
-    #so that we can reload
+    #subscribe to this to implement the details of hot loading
     if $
         $(window).trigger 'loadedcode', [data, app]
 

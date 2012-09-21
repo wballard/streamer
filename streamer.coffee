@@ -2,7 +2,6 @@
 Streamer compiler, turns source into events to allow streaming updates.
 ###
 _ = require 'underscore'
-walk = require 'walk'
 fs = require 'fs'
 path = require 'path'
 Q = require 'q'
