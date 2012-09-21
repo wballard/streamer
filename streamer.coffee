@@ -132,6 +132,7 @@ handlebars = (options) ->
         #use the prior introspection to provide the partials
         for name in provides_partials
             options.source += "\nHandlebars.partials['#{name}'] = module.exports;"
+            options.provides.push name
         options.name = options.template_name
         options.content_type = 'application/javascript'
         options

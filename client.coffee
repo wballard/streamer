@@ -88,23 +88,33 @@ loadingCode = (socket, data, app, force) ->
 
 #call when we are done loading
 loadedCode = (socket, data, app) ->
+    #there is a base module_name
     module_name = data.module_name
     console.log("loaded #{data.module_name} from #{data.file_name}", data) if app.log
     loaded[module_name] = app.module
+
     #modules have multiple names that they provide
     for other_name in data.provides
+        #record this module with each of its names it provides
         loaded[other_name] = app.module
-        #all dependent modules need to be reloaded
+        #all dependent modules need to be reloaded for the name
         dependent_modules = dependencies[other_name] or {}
         for dependent_module, _ of dependent_modules
-            #TODO FULL PATH
             loadCode socket, dependent_module, true
+
+    #modules can have dependencies precomputed by streamer that
+    #aren't form require, for example partial templates
+    for dependency in data.depends_on
+        trackRequirement data.file_name, dependency
+
     #all the tracking data structures are set up, fire the event
     #so that we can reload
     if $
         $(window).trigger 'loadedcode', [data, app]
 
-#keep track of dependencies built up via require
+###
+Keep track of dependencies built up via `require`.
+###
 app.dependencies = dependencies = {}
 trackRequirement = (module_name, requires_module_name) ->
     chain = dependencies[requires_module_name] or {}

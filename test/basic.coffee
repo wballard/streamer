@@ -83,7 +83,8 @@ describe 'provides callbacks from code changes', ->
                     '/Users/wballard/streamer/test/src/hb/scratch.handlebars',
                     '/Users/wballard/streamer/test/src/hb/scratch',
                     '/scratch.handlebars',
-                    '/scratch' ]
+                    '/scratch',
+                    'this_is_scratch']
                 #this is a handlebars template, and should show up as runnable code
                 context =
                     Handlebars: Handlebars
