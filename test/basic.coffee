@@ -4,7 +4,9 @@ Basic works-at-all tests.
 
 should = require 'should'
 fs = require 'fs'
-streamer = require '../streamer.coffee'
+path = require 'path'
+lib  = path.join(path.dirname(fs.realpathSync(__filename)), '../lib')
+streamer = require lib + '/streamer'
 request = require 'supertest'
 connect = require 'connect'
 Handlebars = require 'handlebars'
@@ -32,7 +34,7 @@ describe 'watch as middleware', ->
         app = connect()
         app.use(streamer.push())
         request(app)
-            .get('/streamer/streamer.js')
+            .get('/streamer.js')
             .expect('Content-Type', /javascript/)
             .expect(201, done)
 

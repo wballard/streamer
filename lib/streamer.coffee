@@ -304,7 +304,7 @@ exports.push = (options) ->
 
     #watch is also middleware that delivers a client library
     (request, response, next) ->
-        if request.method is 'GET' and url.parse(request.url).pathname.toLowerCase() is '/streamer/streamer.js'
+        if request.method is 'GET' and url.parse(request.url).pathname.toLowerCase() is '/streamer.js'
             if request.headers.referer
                 referer_protocol = url.parse(request.headers.referer).protocol
             else

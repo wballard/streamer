@@ -28,7 +28,8 @@
     "js-yaml": ">= 0.2.3",
     "uglify-js": ">= 1.3.3",
     "express": ">3",
-    "socket.io": ""
+    "socket.io": "",
+    "commander": ""
   },
   "devDependencies": {
     "touch": "",
@@ -38,9 +39,10 @@
     "connect": ""
   },
   "scripts": {
-    "test": "./node_modules/.bin/mocha --compilers coffee:coffee-script --watch",
-    "start": "./node_modules/.bin/cake start",
-    "install": "make all"
+    "test": "./node_modules/.bin/mocha --compilers coffee:coffee-script --watch"
+  },
+  "bin": {
+    "streamer": "./bin/streamer"
   },
   "repository": {
     "type": "git",

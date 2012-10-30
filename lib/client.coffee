@@ -82,7 +82,7 @@ loadingCode = (socket, data, app, force) ->
         #re-entrancy prevention
     else
         loading[module_name] = true
-        if $
+        if $?
             $(window).trigger 'loadingcode', [data, app]
         console.log("loading #{module_name}") if app.log
 
@@ -109,7 +109,7 @@ loadedCode = (socket, data, app) ->
 
     #all the tracking data structures are set up, fire the event
     #subscribe to this to implement the details of hot loading
-    if $
+    if $?
         $(window).trigger 'loadedcode', [data, app]
 
 ###
