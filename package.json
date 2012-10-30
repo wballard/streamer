@@ -1,7 +1,7 @@
 {
   "name": "streamer",
   "version": "0.0.1",
-  "description": "Stream your script and template changes as events.",
+  "description": "Stream your browser applications",
   "homepage": "https://github.com/wballard/streamer",
   "keywords": [
     "connect",
@@ -26,7 +26,9 @@
     "handlebars": ">= 1.0.0",
     "less": ">= 1.2.2",
     "js-yaml": ">= 0.2.3",
-    "uglify-js": ">= 1.3.3"
+    "uglify-js": ">= 1.3.3",
+    "express": ">3",
+    "socket.io": ""
   },
   "devDependencies": {
     "touch": "",
@@ -36,7 +38,8 @@
     "connect": ""
   },
   "scripts": {
-    "test": "make test",
+    "test": "./node_modules/.bin/mocha --compilers coffee:coffee-script --watch",
+    "start": "./node_modules/.bin/cake start",
     "install": "make all"
   },
   "repository": {
