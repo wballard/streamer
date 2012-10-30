@@ -189,7 +189,6 @@ exports.DEFAULTS = DEFAULTS =
         '.coffee': [read, injector, coffeescript]
         '.js': [read]
         '.handlebars': [read, handlebars, template]
-        '': [read]
     makes:
         '.coffee.js': '.coffee'
 

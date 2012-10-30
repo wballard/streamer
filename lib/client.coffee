@@ -55,12 +55,11 @@ This relies on jQuery being available to trigger events.
 ###
 
 ###
-Make things visible at the top level as an 'app'. This ends up being our single
-root variable.
+Make things visible at the top level.
 ###
-@app = app = {}
+@streamer = app = {}
 #flip this to true to get a lot of logging messages
-app.log = false
+app.log = true
 #loaded code modules are kept here along with their exports
 app.loaded = loaded = {}
 #keep track of code as it is loading
@@ -81,10 +80,10 @@ loadingCode = (socket, data, app, force) ->
     if loading[module_name] and not force
         #re-entrancy prevention
     else
-        loading[module_name] = true
-        if $?
-            $(window).trigger 'loadingcode', [data, app]
         console.log("loading #{module_name}") if app.log
+        loading[module_name] = true
+        if window?.$?
+            window.$(window).trigger 'loadingcode', [data, app]
 
 #call when we are done loading
 loadedCode = (socket, data, app) ->
@@ -109,8 +108,8 @@ loadedCode = (socket, data, app) ->
 
     #all the tracking data structures are set up, fire the event
     #subscribe to this to implement the details of hot loading
-    if $?
-        $(window).trigger 'loadedcode', [data, app]
+    if window?.$?
+        window.$(window).trigger 'loadedcode', [data, app]
 
 ###
 Keep track of dependencies built up via `require`.
