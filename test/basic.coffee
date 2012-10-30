@@ -68,8 +68,13 @@ describe 'provides callbacks from code changes', ->
             fs.unlinkSync source
         fs.writeFileSync source, '#A comment'
 
+describe 'know about handlebars', ->
 
-    it 'knows about handlebars', (done) ->
+    afterEach (done) ->
+        watcher.close()
+        done()
+
+    it 'fires an initial event', (done) ->
         watcher = streamer.watch
             directory: __dirname + '/src/hb'
             , (error, data) ->
@@ -87,12 +92,11 @@ describe 'provides callbacks from code changes', ->
                     'this_is_scratch']
                 #this is a handlebars template, and should show up as runnable code
                 context =
+                    #feed in handlebars, no need to prove we can load it here
                     Handlebars: Handlebars
                     module: {}
-                    exports: {}
                 Function("""
                 module = this.module;
-                exports = this.exports;
                 #{data.source}
                 """).call(context)
                 #self registration as the file name as a template
