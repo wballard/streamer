@@ -14,10 +14,10 @@ exports.run = (port, root_directory) ->
     io = require('socket.io').listen(server)
 
     #stream on demand
-    app.use '/src', streamer.deliver(
+    app.use '/', streamer.deliver(
         #deliver compiled source from
         directory: root_directory
-        log: false
+        log: true
     )
     #stream over socket io on file changes
     app.use streamer.push(

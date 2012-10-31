@@ -73,7 +73,6 @@ injector = (options) ->
 coffeescript = (options) ->
     Q.fcall ->
         options.source = compilers.coffeescript.compile options.source, options
-        options.content_type = 'application/javascript'
         options
 
 #Promise to uglify the source, returning compacted javascript
@@ -83,7 +82,6 @@ uglify = (options) ->
         ast = compilers.uglify.uglify.ast_mangle ast
         ast = compilers.uglify.uglify.ast_squeeze ast
         options.source =  compilers.uglify.uglify.gen_code ast
-        options.content_type = 'application/javascript'
         options
 
 #Promise to compile the source from handlebars to javascript
@@ -135,7 +133,6 @@ handlebars = (options) ->
             options.source += "\nHandlebars.partials['#{name}'] = module.exports;"
             options.provides.push name
         options.name = options.template_name
-        options.content_type = 'application/javascript'
         options
 
 #marker when we have compiled a template function, not just plain code
@@ -143,6 +140,19 @@ template = (options) ->
     Q.fcall ->
         options.template = true
         options
+
+#marker that this is code
+code = (options) ->
+    Q.fcall ->
+        options.content_type = 'application/javascript'
+        options
+
+#marker that this is style
+stylesheet = (options) ->
+    Q.fcall ->
+        options.content_type = 'text/css'
+        options
+
 
 #Run the compilation sequence for a file, calling back when done
 compile = (file_name, options, callback) ->
@@ -188,11 +198,15 @@ exports.DEFAULTS = DEFAULTS =
     followLinks: true
     log: false
     pipelines:
-        '.coffee': [read, injector, coffeescript]
-        '.js': [read]
-        '.handlebars': [read, handlebars, template]
+        '.coffee': [read, injector, coffeescript, code]
+        '.js': [read, code]
+        '.handlebars': [read, handlebars, template, code]
+        '.css': [read, stylesheet]
+        '.png': [read]
     makes:
         '.coffee.js': '.coffee'
+        '.js': '.js'
+        '.css': '.css'
 
 
 ###
@@ -274,12 +288,19 @@ exports.push = (options) ->
         #options is the data context all the way down
         options.io = null
         io.of('/streamer').on 'connection', (socket) ->
+
+            send_it = (data) ->
+                if data.content_type is 'application/javascript'
+                    socket.emit 'code', data
+                else if data.content_type is 'text/css'
+                    socket.emit 'stylesheet', data
+
             #a client has connected to us, time to look for code changes
             watcher = watch options, (error, data) ->
                 if error
                     console.log(error) if options.log
                 else
-                    socket.emit 'code', data
+                    send_it data
 
             socket.on 'load', (module_name) ->
                 #this is an explicit request to load code
@@ -299,7 +320,8 @@ exports.push = (options) ->
                             console.log error
                         else
                             data.module_name = module_name
-                            socket.emit 'code', data
+                            send_it data
+
 
             socket.on 'disconnect', () ->
                 #clean up the file watcher

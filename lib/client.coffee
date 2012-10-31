@@ -125,6 +125,18 @@ trackRequirement = (module_name, requires_module_name) ->
 #dynamically loaded
 host = host or 'http://localhost'
 socket = io.connect("#{host}/streamer")
+
+socket.on 'stylesheet', (data) ->
+    link = document.createElement 'link'
+    link.setAttribute 'rel', 'stylesheet'
+    link.setAttribute 'type', data.content_type
+    link.setAttribute 'href', data.module_name
+    head = document.getElementsByTagName("head")[0]
+    for e in head.children
+        if e.getAttribute('href') is data.module_name
+            head.removeChild e
+    head.appendChild link
+
 socket.on 'code', (data) ->
     loadingCode socket, data, app, true
     #a context that shorts out part of the application, so that app is still
@@ -151,7 +163,7 @@ socket.on 'code', (data) ->
             console.log("#{module_name} not yet available") if app.log
             throw "#{module_name} not yet available"
     app.define = (module_name, deps, module) ->
-        console.log module_name, 'DEFINE'
+        console.log('define', module_name) if app.log
         app.module.exports = module()
     app.define.amd = {}
     app.define.amd.jQuery = true

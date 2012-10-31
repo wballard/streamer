@@ -25,6 +25,19 @@ describe 'can deliver code via GET', ->
             .expect('Location', /scratch.coffee/)
             .expect(201, done)
 
+    it 'should be able to stream javascript', (done) ->
+        request(app)
+            .get('/scratch.js')
+            .expect('Content-Type', /javascript/)
+            .expect('Location', /scratch.js/)
+            .expect(201, done)
+
+    it 'should be able to stream css', (done) ->
+        request(app)
+            .get('/scratch.css')
+            .expect('Content-Type', /css/)
+            .expect('Location', /scratch.css/)
+            .expect(201, done)
 
 watcher = null
 
@@ -102,7 +115,7 @@ describe 'know about handlebars', ->
                 #{data.source}
                 """).call(context)
                 #self registration as the file name as a template
-                context.Handlebars.templates.should.have.property('/scratch')
+                context.Handlebars.templates.should.have.property('scratch')
                 #self registration as a partial with a supplied name in the
                 #source {{registerPartial ...}} tag
                 context.Handlebars.partials.should.have.property('this_is_scratch')
