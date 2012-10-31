@@ -46,13 +46,15 @@ read = (options) ->
             #full file name is provided
             options.provides.push options.file_name
             #name without extension
-            options.provides.push options.file_name.replace path.extname(options.file_name), ''
+            options.provides.push \
+                options.file_name.replace path.extname(options.file_name), ''
             #name without the relative directory
-            options.provides.push options.file_name.replace options.directory, ''
+            without_directory = \
+                options.file_name.replace((options.directory + '/'), '')
+            options.provides.push without_directory
             #and hey -- without the name or relative directory
             options.provides.push \
-                (options.file_name.replace options.directory, '').replace \
-                    path.extname(options.file_name), ''
+                without_directory.replace(path.extname(options.file_name), '')
             #and well known modules
             for name, file_name of options.module_file_names
                 if file_name is options.file_name
@@ -115,7 +117,7 @@ handlebars = (options) ->
         options.source = String template_function
         options.source =
             """
-            Handlebars = this.Handlebars || require('handlebars.runtime.js');
+            Handlebars = this.Handlebars || require('handlebars.runtime.js')
             Handlebars.templates = Handlebars.templates || {};
             Handlebars.partials = Handlebars.partials || {};
             module.exports = Handlebars.template(#{options.source});
@@ -179,7 +181,7 @@ Default options for watch.
 exports.DEFAULTS = DEFAULTS =
     #this is a module name to file name translation table for well known modules
     module_file_names:
-        'handlebars.runtime.js': path.join(__dirname, 'lib', 'handlebars.runtime.js')
+        'handlebars.runtime.js': path.join(__dirname, '../support/handlebars.runtime.js')
     #root directory where we'll build relative paths from
     directory: process.cwd()
     #follow links on file watching
@@ -284,6 +286,8 @@ exports.push = (options) ->
                 if options.module_file_names[module_name]
                     #a name we recognize, in which case we look up the file name
                     load_from_file = options.module_file_names[module_name]
+                else if options.module_file_names[path.basename(module_name)]
+                    load_from_file = options.module_file_names[path.basename(module_name)]
                 else if module_name[0] is '/'
                     #assume this to be a full path when we have a prefix
                     load_from_file = module_name

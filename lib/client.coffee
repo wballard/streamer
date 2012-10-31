@@ -140,19 +140,32 @@ socket.on 'code', (data) ->
         #first things first, we may actually have code already loaded
         if loaded[module_name]
             console.log("#{module_name} is loaded") if app.log
-            return loaded[module_name]
-        #and of course, we need to load the required module, if it isn't around
-        loadCode socket, module_name
-        console.log("#{module_name} not yet available") if app.log
-        throw "#{module_name} not yet available"
+            module = loaded[module_name]
+            if typeof module.exports is 'function'
+                module.exports
+            else
+                module
+        else
+            #and of course, we need to load the required module, if it isn't around
+            loadCode socket, module_name
+            console.log("#{module_name} not yet available") if app.log
+            throw "#{module_name} not yet available"
+    app.define = (module_name, deps, module) ->
+        console.log module_name, 'DEFINE'
+        app.module.exports = module()
+    app.define.amd = {}
+    app.define.amd.jQuery = true
     #call in context, 'this' is app for the injected code, so all our hot loaded
     #code is run inside the app, not in the browser or global
     try
         Function(
             """
+                //synthetic commonjs
                 require = this.require;
                 exports = this.module.exports;
                 module = this.module;
+                //synthetic AMD
+                define = this.define;
                 #{data.source}
             """).call(app)
         data.exports = app.module.exports
@@ -161,5 +174,5 @@ socket.on 'code', (data) ->
         app.module = null
         loadedCode(socket, data, app)
     catch e
-        console.log(e, e.stack, data, app) if app.log
+        console.log(e, data, app) if app.log
 

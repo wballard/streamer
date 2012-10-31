@@ -89,8 +89,8 @@ describe 'know about handlebars', ->
                 data.provides.should.eql [
                     path.join(__dirname, 'src/hb/scratch.handlebars'),
                     path.join(__dirname, 'src/hb/scratch'),
-                    '/scratch.handlebars',
-                    '/scratch',
+                    'scratch.handlebars',
+                    'scratch',
                     'this_is_scratch']
                 #this is a handlebars template, and should show up as runnable code
                 context =
