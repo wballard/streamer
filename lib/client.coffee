@@ -133,7 +133,7 @@ socket.on 'stylesheet', (data) ->
     link.setAttribute 'href', data.module_name
     head = document.getElementsByTagName("head")[0]
     for e in head.children
-        if e.getAttribute('href') is data.module_name
+        if e and e.getAttribute('href') is data.module_name
             head.removeChild e
     head.appendChild link
 
@@ -186,5 +186,5 @@ socket.on 'code', (data) ->
         app.module = null
         loadedCode(socket, data, app)
     catch e
-        console.log(e, data, app) if app.log
+        console.log(e, e.stack, data, app) if app.log
 

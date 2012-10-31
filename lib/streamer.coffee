@@ -97,7 +97,7 @@ handlebars = (options) ->
             if o.statements
                 for statement in o.statements
                     if statement?.type is 'mustache'
-                        if statement?.id?.string is 'registerPartial'
+                        if statement?.id?.string is 'partial'
                             for param in (statement.params or [])
                                 provides_partials.push param?.string
 
@@ -112,23 +112,17 @@ handlebars = (options) ->
 
         #compile that source, and get a function post compilation
         template_function = compilers.handlebars.precompile options.source, options
-        options.source = String template_function
+        source = String template_function
         options.source =
             """
             Handlebars = this.Handlebars || require('handlebars.runtime.js')
-            Handlebars.templates = Handlebars.templates || {};
             Handlebars.partials = Handlebars.partials || {};
-            module.exports = Handlebars.template(#{options.source});
-            //special helper that returns no content, but hooks up a partial
-            //via prior introspection
-            Handlebars.registerHelper("registerPartial", function(name) {
+            Handlebars.registerHelper("partial", function() {
                 return "";
             });
+            template = Handlebars.template(#{source});
+            module.exports = template;
             """
-        #all of our available provides names, these are templates
-        for name in options.provides
-            options.source += "\nHandlebars.templates['#{name}'] = module.exports;"
-        #use the prior introspection to provide the partials
         for name in provides_partials
             options.source += "\nHandlebars.partials['#{name}'] = module.exports;"
             options.provides.push name

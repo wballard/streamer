@@ -114,8 +114,6 @@ describe 'know about handlebars', ->
                 module = this.module;
                 #{data.source}
                 """).call(context)
-                #self registration as the file name as a template
-                context.Handlebars.templates.should.have.property('scratch')
                 #self registration as a partial with a supplied name in the
                 #source {{registerPartial ...}} tag
                 context.Handlebars.partials.should.have.property('this_is_scratch')
