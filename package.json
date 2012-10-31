@@ -29,7 +29,8 @@
     "uglify-js": ">= 1.3.3",
     "express": ">3",
     "socket.io": "",
-    "commander": ""
+    "commander": "",
+    "wrench": ""
   },
   "devDependencies": {
     "touch": "",

@@ -5,18 +5,24 @@ var path = require('path');
 var fs   = require('fs');
 var coffee = require('coffee-script');
 var lib  = path.join(path.dirname(fs.realpathSync(__filename)), '../lib');
+var app  = path.join(path.dirname(fs.realpathSync(__filename)), '../app');
 var coffee_command
     = path.join(path.dirname(fs.realpathSync(__filename)), '../node_modules/.bin/coffee');
 var pkg  = path.join(path.dirname(fs.realpathSync(__filename)), '../package.json');
 var program = require('commander');
+var wrench = require('wrench');
 
 program
     .version(pkg.version)
+    .option('-s, --sample', 'build a sample app')
     .option('-p, --port <port>', 'serve on this port', Number, 9000)
     .option('-d, --directory <directory>', 'serve this directory of assets', String, './app')
     .parse(process.argv);
 
-
-program.directory = fs.realpathSync(program.directory);
-
-require(lib + '/server').run(program.port, program.directory);
+if(program.sample) {
+    console.log("Hi there, I'm creating a sample streamer app in ./app...");
+    wrench.copyDirSyncRecursive(app, "./app");
+} else {
+    program.directory = fs.realpathSync(program.directory);
+    require(lib + '/server').run(program.port, program.directory);
+}
