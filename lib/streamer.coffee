@@ -27,6 +27,7 @@ realpath = (options) ->
             defer.reject "#{options.file_name} not found"
         else
             options.file_name = full_file_name
+            options.require_from = path.dirname(options.file_name)
             defer.resolve options
     defer.promise
 
@@ -45,16 +46,6 @@ read = (options) ->
             options.source = data
             #full file name is provided
             options.provides.push options.file_name
-            #name without extension
-            options.provides.push \
-                options.file_name.replace path.extname(options.file_name), ''
-            #name without the relative directory
-            without_directory = \
-                options.file_name.replace((options.directory + '/'), '')
-            options.provides.push without_directory
-            #and hey -- without the name or relative directory
-            options.provides.push \
-                without_directory.replace(path.extname(options.file_name), '')
             #and well known modules
             for name, file_name of options.module_file_names
                 if file_name is options.file_name
@@ -204,6 +195,7 @@ exports.DEFAULTS = DEFAULTS =
         '.png': [read]
     makes:
         '.coffee.js': '.coffee'
+        '.handlebars.js': '.handlebars'
         '.js': '.js'
         '.css': '.css'
 

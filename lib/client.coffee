@@ -148,11 +148,17 @@ socket.on 'code', (data) ->
             exports: {}
     app.require = (module_name) ->
         #requirements set up a dependency chain
-        trackRequirement data.file_name, module_name
+        if data.module_file_names[module_name]
+            #well known file names, these are like globals
+            module_file_name = data.module_file_names[module_name]
+        else
+            #relative file names
+            module_file_name =  "#{data.require_from}/#{module_name}"
+        trackRequirement data.file_name, module_file_name
         #first things first, we may actually have code already loaded
-        if loaded[module_name]
+        if loaded[module_file_name]
             console.log("#{module_name} is loaded") if app.log
-            module = loaded[module_name]
+            module = loaded[module_file_name]
             if typeof module.exports is 'function'
                 module.exports
             else

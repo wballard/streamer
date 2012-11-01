@@ -41,7 +41,7 @@ describe 'can deliver code via GET', ->
 
 watcher = null
 
-describe 'watch as middleware', ->
+describe 'as middleware', ->
 
     it 'provides a client library', (done) ->
         app = connect()
@@ -50,8 +50,6 @@ describe 'watch as middleware', ->
             .get('/streamer.js')
             .expect('Content-Type', /javascript/)
             .expect(201, done)
-
-
 
 
 describe 'provides callbacks from code changes', ->
@@ -98,12 +96,10 @@ describe 'know about handlebars', ->
                 #if you use a partial, as is the case in this template, you
                 #depend on it by name
                 data.depends_on.should.eql(['somepartial'])
+                data.require_from.should.eql(__dirname + '/src/hb')
                 #and since this is a template that registers as a partial
                 data.provides.should.eql [
                     path.join(__dirname, 'src/hb/scratch.handlebars'),
-                    path.join(__dirname, 'src/hb/scratch'),
-                    'scratch.handlebars',
-                    'scratch',
                     'this_is_scratch']
                 #this is a handlebars template, and should show up as runnable code
                 context =
