@@ -157,17 +157,15 @@ socket.on 'code', (data) ->
         trackRequirement data.file_name, module_file_name
         #first things first, we may actually have code already loaded
         if loaded[module_file_name]
-            console.log("#{module_name} is loaded") if app.log
+            console.log("#{module_file_name} is loaded") if app.log
             module = loaded[module_file_name]
-            if typeof module.exports is 'function'
-                module.exports
-            else
-                module
+            module.exports
         else
             #and of course, we need to load the required module, if it isn't around
-            loadCode socket, module_name
-            console.log("#{module_name} not yet available") if app.log
-            throw "#{module_name} not yet available"
+            loadCode socket, module_file_name
+            console.log("#{module_file_name} not yet available") if app.log
+            throw "#{module_file_name} not yet available"
+
     app.define = (module_name, deps, module) ->
         console.log('define', module_name) if app.log
         app.module.exports = module()
