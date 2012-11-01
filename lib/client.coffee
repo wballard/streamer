@@ -130,7 +130,7 @@ socket.on 'stylesheet', (data) ->
     link = document.createElement 'link'
     link.setAttribute 'rel', 'stylesheet'
     link.setAttribute 'type', data.content_type
-    link.setAttribute 'href', data.module_name
+    link.setAttribute 'href', data.href
     head = document.getElementsByTagName("head")[0]
     for e in head.children
         if e and e.getAttribute('href') is data.module_name

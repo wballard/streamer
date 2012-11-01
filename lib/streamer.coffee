@@ -145,6 +145,7 @@ code = (options) ->
 stylesheet = (options) ->
     Q.fcall ->
         options.content_type = 'text/css'
+        options.href = options.file_name.replace options.directory, ''
         options
 
 
