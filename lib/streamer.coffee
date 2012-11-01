@@ -24,7 +24,7 @@ realpath = (options) ->
     defer = Q.defer()
     fs.realpath options.file_name, (err, full_file_name) ->
         if err
-            defer.reject err
+            defer.reject "#{options.file_name} not found"
         else
             options.file_name = full_file_name
             defer.resolve options
@@ -159,13 +159,14 @@ compile = (file_name, options, callback) ->
         return
     if options.log
         console.log "compiling #{file_name}"
+    #this gets us a 'new' options object, ready to run
     options = merge {file_name: file_name}, options
     options.depends_on = []
     options.provides = []
 
     #and a promise chain, adding in the compiler sequences as a pipeline
-    result = Q.resolve options
-    result.then realpath
+    result = Q.resolve(options)
+        .then(realpath)
 
     pipeline.forEach (f) ->
         result = result.then f
@@ -233,8 +234,7 @@ exports.deliver = (options) ->
             console.log("possibly streaming #{possible}") if options.log
             compile possible, options, (error, data) ->
                 if error
-                    if options.log
-                        console.log error
+                    console.log(error) if options.log
                     next()
                 else
                     response.setHeader 'Location', data.file_name
