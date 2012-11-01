@@ -30,7 +30,8 @@
     "express": ">3",
     "socket.io": "",
     "commander": "",
-    "wrench": ""
+    "wrench": "",
+    "html5-biolerplate": "git://github.com/wballard/html5-boilerplate.git"
   },
   "devDependencies": {
     "touch": "",

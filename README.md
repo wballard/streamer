@@ -26,7 +26,7 @@ focuses on *hot loading code* over *socket.io* including:
     * script
     * styles
 
-## How is this Different?
+# How is this Different?
 
 Web frameworks are fundamentally code and assets loaded over *GET*.
 Streamer is a push based, event driven framework that makes your code
@@ -38,9 +38,15 @@ Streamer is aimed at single page applications and widgets where you are
 injecting code into a container page. It doesn't impose a framework or
 an application design, it is just a way to get code.
 
-# Code Loading
+## Code Loading
 
 Lots of ways to get JavaScript modules out there. Streamer takes the
 CommonJS approach, you just `require(...)`, and the hot loading system
 takes care of dependencies for you by simply reloading until the
 dependencies are filled.
+
+## HTML5 Boilerplate
+
+When you want to make a new single page application, Streamer serves
+HTML5 boilerplate at the root, allowing you to customize from there with
+hot loaded code.
