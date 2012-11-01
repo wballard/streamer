@@ -151,14 +151,17 @@ stylesheet = (options) ->
 
 #Run the compilation sequence for a file, calling back when done
 compile = (file_name, options, callback) ->
+    for to, from of options.makes
+        match_to = new RegExp("#{to}$")
+        if match_to.exec file_name
+            file_name = file_name.replace match_to, from
+            break
     #pick the right pipeline, then create a Q chain from it
     pipeline = options.pipelines[path.extname(file_name)]
     if not pipeline
-        if options.log
-            console.log "no pipeline for #{file_name}"
+        callback("no pipeline for #{file_name}")
         return
-    if options.log
-        console.log "compiling #{file_name}"
+    console.log("compiling #{file_name}") if options.log
     #this gets us a 'new' options object, ready to run
     options = merge {file_name: file_name}, options
     options.depends_on = []
@@ -223,16 +226,8 @@ exports.deliver = (options) ->
             return next()
         pathname = url.parse(request.url).pathname
         pathname = path.join options.directory, pathname
-        #now let's figure all the actual file names possible
-        possible = null
-        for to, from of options.makes
-            match_to = new RegExp("#{to}$")
-            if match_to.exec pathname
-                possible = pathname.replace match_to, from
-                break
-        if possible
-            console.log("possibly streaming #{possible}") if options.log
-            compile possible, options, (error, data) ->
+        if pathname
+            compile pathname, options, (error, data) ->
                 if error
                     console.log(error) if options.log
                     next()
