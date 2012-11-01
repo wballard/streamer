@@ -50,3 +50,23 @@ dependencies are filled.
 When you want to make a new single page application, Streamer serves
 HTML5 boilerplate at the root, allowing you to customize from there with
 hot loaded code.
+
+## Dealing with State
+
+Streamer really does reload your code, which means it really does re-run
+it. So, you can double up event handlers, and overwrite variables as
+code reloads. This is a feature, but you need to be a bit careful.
+
+### Events
+
+### Data & Variables
+
+The most important thing to realize is variables in your hot loaded
+scripts can and will be re-set, so you can adopt a strategy like this:
+
+```
+var x = x || {"default": "value"};
+```
+
+Alternately, you can put things in local storage or explicitly hang them
+off of `window`.
