@@ -2,7 +2,7 @@
 
 home = require 'home.handlebars'
 message = require 'message.handlebars'
-tools = require 'include/tools.coffee'
+tools = require 'include/tools'
 tools.go()
 $('body').html home({})
 #remove this comment and save

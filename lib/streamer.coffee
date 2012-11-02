@@ -139,22 +139,33 @@ stylesheet = (options) ->
         options.href = options.file_name.replace options.directory, ''
         options
 
-
 #Run the compilation sequence for a file, calling back when done
 compile = (file_name, options, callback) ->
+    original_file_name = file_name + ''
+    #this gets us a 'new' options object, ready to run
+    options = merge {}, options
+    #make style extension translation
     for to, from of options.makes
         match_to = new RegExp("#{to}$")
         if match_to.exec file_name
             file_name = file_name.replace match_to, from
             break
+    #do the module extension hunt
+    options.module_extensions = options.module_extensions.slice(0)
+    file_name += options.module_extensions.shift()
+    console.log file_name, options.module_extensions
     #pick the right pipeline, then create a Q chain from it
     pipeline = options.pipelines[path.extname(file_name)]
     if not pipeline
-        callback("no pipeline for #{file_name}")
-        return
+        if options.module_extensions.length is 0
+            callback("no pipeline for #{file_name}")
+            return
+        else
+            compile original_file_name, options, callback
+            return
+
     console.log("compiling #{file_name}") if options.log
-    #this gets us a 'new' options object, ready to run
-    options = merge {file_name: file_name}, options
+    options.file_name = file_name
     options.depends_on = []
     options.provides = []
 
@@ -171,7 +182,10 @@ compile = (file_name, options, callback) ->
                 console.log("compiled #{file_name}") if options.log
                 callback null, options
         .fail (error) ->
-            callback error, options
+            if options.module_extensions.length
+                compile original_file_name, options, callback
+            else
+                callback error, options
         .end()
 
 #our exported bits
@@ -196,8 +210,7 @@ exports.DEFAULTS = DEFAULTS =
     makes:
         '.coffee.js': '.coffee'
         '.handlebars.js': '.handlebars'
-        '.js': '.js'
-        '.css': '.css'
+    module_extensions: ['', '.js', '.coffee']
 
 
 ###

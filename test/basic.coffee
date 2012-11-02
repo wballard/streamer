@@ -18,16 +18,37 @@ describe 'can deliver code via GET', ->
         directory: __dirname + '/src'
         log: false
     ))
+    it 'should be able to stream coffescript as js', (done) ->
+        request(app)
+            .get('/alternate.coffee.js')
+            .expect('Content-Type', /javascript/)
+            .expect('Location', /alternate.coffee/)
+            .expect(201, done)
+
     it 'should be able to stream coffescript', (done) ->
         request(app)
-            .get('/scratch.coffee.js')
+            .get('/alternate.coffee')
             .expect('Content-Type', /javascript/)
-            .expect('Location', /scratch.coffee/)
+            .expect('Location', /alternate.coffee/)
+            .expect(201, done)
+
+    it 'should be able to stream coffescript without an extension, require style', (done) ->
+        request(app)
+            .get('/alternate')
+            .expect('Content-Type', /javascript/)
+            .expect('Location', /alternate.coffee/)
             .expect(201, done)
 
     it 'should be able to stream javascript', (done) ->
         request(app)
             .get('/scratch.js')
+            .expect('Content-Type', /javascript/)
+            .expect('Location', /scratch.js/)
+            .expect(201, done)
+
+    it 'should be able to stream javascript without an extension, require style', (done) ->
+        request(app)
+            .get('/scratch')
             .expect('Content-Type', /javascript/)
             .expect('Location', /scratch.js/)
             .expect(201, done)
