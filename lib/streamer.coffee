@@ -153,7 +153,6 @@ compile = (file_name, options, callback) ->
     #do the module extension hunt
     options.module_extensions = options.module_extensions.slice(0)
     file_name += options.module_extensions.shift()
-    console.log file_name, options.module_extensions
     #pick the right pipeline, then create a Q chain from it
     pipeline = options.pipelines[path.extname(file_name)]
     if not pipeline
